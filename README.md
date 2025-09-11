@@ -1,0 +1,2 @@
+# Nexo
+PROJETO DE IA AUTONOMO 
