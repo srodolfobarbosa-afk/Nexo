@@ -5,7 +5,8 @@ from googleapiclient.discovery import build
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
-load_dotenv()
+# Força a leitura do .env a partir do diretório do script, garantindo que ele sempre seja encontrado.
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
 # ==================== Variáveis de Configuração ====================
 API_KEY_GEMINI = os.getenv('GOOGLE_API_KEY')
@@ -154,6 +155,7 @@ def resumir_arquivo(nome_arquivo):
 
 def analisar_erro_com_gemini(mensagem_erro, codigo_contexto="Não há contexto de código disponível."):
     print("Nexo: Ocorreu um erro! Analisando o problema...")
+    
     prompt_analise = f"""
     Análise do erro:
     O programa Python encontrou o seguinte erro:
@@ -165,6 +167,11 @@ def analisar_erro_com_gemini(mensagem_erro, codigo_contexto="Não há contexto d
     Com base nesta informação, identifique a causa do erro e forneça o trecho de código corrigido.
     Responda apenas com o código Python corrigido e uma breve explicação do que foi alterado.
     """
+    
+    if not API_KEY_GEMINI:
+        print("Nexo: A chave de API do Gemini não está configurada.")
+        return
+
     try:
         response = model.generate_content(prompt_analise)
         print("Nexo: Análise do Gemini:")
