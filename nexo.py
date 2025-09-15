@@ -1,6 +1,10 @@
 import os
 import requests
 from dotenv import load_dotenv
+from flask import Flask
+
+# Cria a sua aplicação Flask
+app = Flask(__name__)
 
 def get_api_key():
     """
@@ -10,27 +14,31 @@ def get_api_key():
         load_dotenv()
         api_key = os.getenv("NEXO_API_KEY")
         if not api_key:
-            raise ValueError("A variável NEXO_API_KEY não foi encontrada no arquivo .env")
+            # Agora que estamos em um servidor web, esta lógica é menos necessária
+            # mas é bom ter para testes locais
+            return None 
         return api_key
-    except ValueError as e:
+    except Exception as e:
         print(f"Erro: {e}")
         return None
 
-def main():
+@app.route("/")
+def iniciar_agente():
     """
-    Função principal que executa a lógica do programa.
+    Uma rota que inicia a tarefa do agente de IA.
     """
     print("Iniciando o programa...")
     api_key = get_api_key()
 
     if api_key:
         print("Chave de API carregada com sucesso!")
-        # Aqui é onde você adicionaria a sua lógica para usar a API.
-        # Por exemplo:
-        # response = requests.get(f"https://api.exemplo.com?key={api_key}")
-        # print(response.text)
+        # Aqui é onde você vai colocar a sua lógica principal do agente de IA.
+        # Essa função precisa ser capaz de rodar por muito tempo.
+        return "Agente de IA iniciado com sucesso!"
     else:
-        print("Não foi possível carregar a chave de API. Encerrando o programa.")
+        print("Não foi possível carregar a chave de API.")
+        return "Erro: Não foi possível carregar a chave de API.", 500
 
 if __name__ == "__main__":
-    main()
+    # Esta parte é para testar a aplicação no seu computador
+    app.run(debug=True)
