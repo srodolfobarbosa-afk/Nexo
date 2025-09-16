@@ -1,7 +1,7 @@
 import os
 import requests
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, render_template, request, jsonify, send_from_directory
 
 # Cria a sua aplicação Flask
 app = Flask(__name__)
@@ -23,22 +23,89 @@ def get_api_key():
         return None
 
 @app.route("/")
+def interface_chat():
+    """
+    Rota principal que serve a interface de chat
+    """
+    return send_from_directory('static', 'index.html')
+
+@app.route("/iniciar")
 def iniciar_agente():
     """
     Uma rota que inicia a tarefa do agente de IA.
     """
     print("Iniciando o programa...")
-    api_key = get_api_key()
+    print("Iniciando o agente EcoFinance...")
+    from agentes.EcoFinance import EcoFinanceAgent
+    agent = EcoFinanceAgent()
+    agent.run()
+    return "Agente EcoFinance iniciado com sucesso!"
 
-    if api_key:
-        print("Chave de API carregada com sucesso!")
-        # Aqui é onde você vai colocar a sua lógica principal do agente de IA.
-        # Essa função precisa ser capaz de rodar por muito tempo.
-        return "Agente de IA iniciado com sucesso!"
-    else:
-        print("Não foi possível carregar a chave de API.")
-        return "Erro: Não foi possível carregar a chave de API.", 500
+@app.route("/chat", methods=["POST"])
+def processar_missao():
+    """
+    Rota para processar missões via chat
+    """
+    try:
+        data = request.get_json()
+        user_message = data.get('message', '')
+        
+        if not user_message:
+            return jsonify({"response": "Por favor, envie uma mensão válida."})
+        
+        # Importar e usar o Nexo Gênesis
+        from agentes.NexoGenesis import NexoGenesisAgent
+        nexo = NexoGenesisAgent()
+        
+        # Processar a missão
+        response = nexo.process_mission(user_message)
+        
+        return jsonify({"response": response})
+        
+    except Exception as e:
+        print(f"Erro ao processar missão: {e}")
+        return jsonify({"response": f"Erro interno: {e}"}), 500
+
+@app.route("/status")
+def status_sistema():
+    """
+    Rota para verificar o status do sistema
+    """
+    try:
+        from agentes.NexoGenesis import NexoGenesisAgent
+        nexo = NexoGenesisAgent()
+        status = nexo.get_status()
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route("/agentes")
+def listar_agentes():
+    """
+    Rota para listar agentes disponíveis
+    """
+    try:
+        import glob
+        agentes_files = glob.glob("agentes/*.py")
+        agentes = []
+        
+        for file in agentes_files:
+            if "__" not in file:  # Ignorar __pycache__ e __init__.py
+                nome = os.path.basename(file).replace('.py', '')
+                agentes.append(nome)
+        
+        return jsonify({"agentes": agentes})
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+# Servir arquivos estáticos
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_from_directory('static', filename)
 
 if __name__ == "__main__":
     # Esta parte é para testar a aplicação no seu computador
-    app.run(debug=True)
+    print("🌱 EcoGuardians - Sistema Iniciado")
+    print("🤖 Nexo Gênesis - Agente Orquestrador Ativo")
+    print("💬 Interface de Chat disponível em: http://127.0.0.1:5000")
+    app.run(debug=True, host='0.0.0.0', port=5000)

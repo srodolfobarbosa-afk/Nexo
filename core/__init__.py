@@ -1,0 +1,1 @@
+# Pacote core do EcoGuardians
