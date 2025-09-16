@@ -9,6 +9,7 @@ from core.auto_construction import AutoConstructionModule
 from core.evolution import EvolutionModule
 from core.json_utils import extract_json, safe_json_response, create_json_prompt, MISSION_INTERPRETATION_SCHEMA
 import ollama
+import google.generativeai as genai
 import re
 
 load_dotenv()
@@ -164,23 +165,11 @@ class NexoGenesisAgent:
         """Chama a API do Google Gemini"""
         if not self.gemini_api_key:
             raise ValueError("GEMINI_API_KEY não configurada.")
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.gemini_api_key}"
-        
-        payload = {
-            "contents": [{
-                "parts": [{"text": prompt}]
-            }]
-        }
-        
-        response = requests.post(url, json=payload)
-        if response.status_code == 200:
-            result = response.json()
-            if "candidates" in result and result["candidates"]:
-                return result["candidates"][0]["content"]["parts"][0]["text"]
-            else:
-                raise Exception(f"Resposta inesperada da API Gemini: {result}")
-        else:
-            raise Exception(f"Erro na API Gemini: {response.status_code} - {response.text}")
+        import google.generativeai as genai
+        genai.configure(api_key=self.gemini_api_key)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(prompt)
+        return response.text
 
     def call_openai(self, prompt):
         """Chama a API da OpenAI"""

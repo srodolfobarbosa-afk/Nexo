@@ -1,5 +1,7 @@
 import os
 import requests
+import sys
+import io
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, send_from_directory
 
@@ -27,17 +29,7 @@ def interface_chat():
     """
     return send_from_directory("static", "index.html")
 
-@app.route("/iniciar")
-def iniciar_agente():
-    """
-    Uma rota que inicia a tarefa do agente de IA.
-    """
-    print("Iniciando o programa...")
-    print("Iniciando o agente EcoFinance...")
-    from agentes.EcoFinance import EcoFinanceAgent
-    agent = EcoFinanceAgent()
-    agent.run()
-    return "Agente EcoFinance iniciado com sucesso!"
+
 
 @app.route("/chat", methods=["POST"])
 def processar_missao():
@@ -51,50 +43,30 @@ def processar_missao():
         if not user_message:
             return jsonify({"response": "Por favor, envie uma mensagem válida."})
         
-        # Importar e usar o Nexo Gênesis
-        from agentes.NexoGenesis import NexoGenesisAgent
-        nexo = NexoGenesisAgent()
+        # Importar e usar o fluxo de autoconstrução
+        from scripts.generate_agent import main as generate_agent_main
         
-        # Processar a missão
-        response = nexo.process_mission(user_message)
-        
-        return jsonify({"response": response})
+        # Capturar a saída do console para retornar ao usuário
+        old_stdout = sys.stdout
+        redirected_output = io.StringIO()
+        sys.stdout = redirected_output
+
+        try:
+            # Processar a missão usando o fluxo de autoconstrução
+            # Por enquanto, rodamos em dry_run=True para testar a geração sem commitar
+            generate_agent_main(user_message, dry_run=True)
+            output = redirected_output.getvalue()
+            return jsonify({"response": output})
+        except Exception as e:
+            output = redirected_output.getvalue()
+            return jsonify({"response": f"Houve um erro ao processar a missão: {e}\nLogs: {output}"}), 500
+        finally:
+            sys.stdout = old_stdout
         
     except Exception as e:
         print(f"Erro ao processar missão: {e}")
         return jsonify({"response": f"Erro interno: {e}"}), 500
 
-@app.route("/status")
-def status_sistema():
-    """
-    Rota para verificar o status do sistema
-    """
-    try:
-        from agentes.NexoGenesis import NexoGenesisAgent
-        nexo = NexoGenesisAgent()
-        status = nexo.get_status()
-        return jsonify(status)
-    except Exception as e:
-        return jsonify({"erro": str(e)}), 500
-
-@app.route("/agentes")
-def listar_agentes():
-    """
-    Rota para listar agentes disponíveis
-    """
-    try:
-        import glob
-        agentes_files = glob.glob("agentes/*.py")
-        agentes = []
-        
-        for file in agentes_files:
-            if "__" not in file:  # Ignorar __pycache__ e __init__.py
-                nome = os.path.basename(file).replace(".py", "")
-                agentes.append(nome)
-        
-        return jsonify({"agentes": agentes})
-    except Exception as e:
-        return jsonify({"erro": str(e)}), 500
 
 # Servir arquivos estáticos
 @app.route("/static/<path:filename>")
