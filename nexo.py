@@ -1,7 +1,9 @@
 import os
 import requests
-import sys
 import io
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, send_from_directory
 
