@@ -14,8 +14,6 @@ def get_api_key():
         load_dotenv()
         api_key = os.getenv("NEXO_API_KEY")
         if not api_key:
-            # Agora que estamos em um servidor web, esta lógica é menos necessária
-            # mas é bom ter para testes locais
             return None 
         return api_key
     except Exception as e:
@@ -27,7 +25,7 @@ def interface_chat():
     """
     Rota principal que serve a interface de chat
     """
-    return send_from_directory('static', 'index.html')
+    return send_from_directory("static", "index.html")
 
 @app.route("/iniciar")
 def iniciar_agente():
@@ -48,10 +46,10 @@ def processar_missao():
     """
     try:
         data = request.get_json()
-        user_message = data.get('message', '')
+        user_message = data.get("message", "")
         
         if not user_message:
-            return jsonify({"response": "Por favor, envie uma mensão válida."})
+            return jsonify({"response": "Por favor, envie uma mensagem válida."})
         
         # Importar e usar o Nexo Gênesis
         from agentes.NexoGenesis import NexoGenesisAgent
@@ -91,7 +89,7 @@ def listar_agentes():
         
         for file in agentes_files:
             if "__" not in file:  # Ignorar __pycache__ e __init__.py
-                nome = os.path.basename(file).replace('.py', '')
+                nome = os.path.basename(file).replace(".py", "")
                 agentes.append(nome)
         
         return jsonify({"agentes": agentes})
@@ -99,13 +97,14 @@ def listar_agentes():
         return jsonify({"erro": str(e)}), 500
 
 # Servir arquivos estáticos
-@app.route('/static/<path:filename>')
+@app.route("/static/<path:filename>")
 def static_files(filename):
-    return send_from_directory('static', filename)
+    return send_from_directory("static", filename)
 
 if __name__ == "__main__":
-    # Esta parte é para testar a aplicação no seu computador
+    port = int(os.environ.get("PORT", 5000))
     print("🌱 EcoGuardians - Sistema Iniciado")
     print("🤖 Nexo Gênesis - Agente Orquestrador Ativo")
-    print("💬 Interface de Chat disponível em: http://127.0.0.1:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    print(f"💬 Interface de Chat disponível em: http://127.0.0.1:{port}")
+    app.run(debug=True, host="0.0.0.0", port=port)
+
