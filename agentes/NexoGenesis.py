@@ -11,6 +11,7 @@ from core.database import get_supabase_client
 from core.internet_search import InternetSearchModule
 from core.auto_construction import AutoConstructionModule
 from core.evolution import EvolutionModule
+from core.self_correction import SelfCorrectionModule
 from core.json_utils import extract_json, safe_json_response, create_json_prompt, MISSION_INTERPRETATION_SCHEMA
 import ollama
 import google.generativeai as genai
@@ -50,11 +51,22 @@ class NexoGenesisAgent:
         # Iniciar evolução contínua
         self.evolution_module.start_evolution_loop()
 
+        # Inicializar módulo de auto-correção
+        self.self_correction_module = SelfCorrectionModule(agent_name="NexoGenesis")
+
         # Novas tabelas para memória de longo prazo e proatividade
         self.agent_memory_table = "nexo_agent_memory"
         self.user_context_table = "nexo_user_context"
         self.proactive_tasks_table = "nexo_proactive_tasks"
         self._ensure_tables_exist()
+
+        # Fazer o NexoGenesis refletir sobre o feedback do usuário (simulado)
+        # Isso seria acionado por um evento ou feedback real
+        self.self_correction_module.reflect_on_performance(
+            "Minha memória e proatividade foram questionadas. Preciso aprender com o histórico e agir de forma mais concreta.",
+            {"context_source": "user_feedback", "timestamp": datetime.now().isoformat()}
+        )
+
 
     def initialize_database(self):
         """Inicializa as tabelas necessárias no Supabase"""
