@@ -75,10 +75,19 @@ def processar_missao():
 def static_files(filename):
     return send_from_directory("static", filename)
 
+# Registrar rotas da API para integração com Telegram
+try:
+    from api_endpoints import register_api_routes
+    register_api_routes(app)
+    print("✅ Rotas da API do Telegram registradas")
+except ImportError as e:
+    print(f"⚠️ Não foi possível carregar rotas da API: {e}")
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     print("🌱 EcoGuardians - Sistema Iniciado")
     print("🤖 Nexo Gênesis - Agente Orquestrador Ativo")
     print(f"💬 Interface de Chat disponível em: http://127.0.0.1:{port}")
+    print("🤖 API do Telegram Bot integrada")
     app.run(debug=True, host="0.0.0.0", port=port)
 

@@ -9,3 +9,4 @@ beautifulsoup4
 duckduckgo-search
 dirtyjson
 google-generativeai
+pyTelegramBotAPI
