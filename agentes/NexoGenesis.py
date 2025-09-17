@@ -1,8 +1,12 @@
 import os
 import json
-import requests
+import logging
 from datetime import datetime
+from supabase import create_client, Client
 from dotenv import load_dotenv
+
+# Importações originais que devem ser mantidas
+import requests
 from core.database import get_supabase_client
 from core.internet_search import InternetSearchModule
 from core.auto_construction import AutoConstructionModule
@@ -14,8 +18,16 @@ import re
 
 load_dotenv()
 
+# Configuração de logging
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
 class NexoGenesisAgent:
     def __init__(self):
+        # Manter a inicialização original do Supabase via get_supabase_client()
         self.supabase = get_supabase_client()
         self.gemini_api_key = os.environ.get("GEMINI_API_KEY")
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
@@ -37,6 +49,12 @@ class NexoGenesisAgent:
         
         # Iniciar evolução contínua
         self.evolution_module.start_evolution_loop()
+
+        # Novas tabelas para memória de longo prazo e proatividade
+        self.agent_memory_table = "nexo_agent_memory"
+        self.user_context_table = "nexo_user_context"
+        self.proactive_tasks_table = "nexo_proactive_tasks"
+        self._ensure_tables_exist()
 
     def initialize_database(self):
         """Inicializa as tabelas necessárias no Supabase"""
@@ -68,6 +86,86 @@ class NexoGenesisAgent:
             print("Estruturas de banco de dados inicializadas (conceitual).")
         except Exception as e:
             print(f"Erro ao inicializar banco de dados: {e}")
+
+    def _ensure_tables_exist(self):
+        # Esta é uma simulação. Em um ambiente real, você usaria migrações ou um ORM.
+        # Para este contexto, vamos apenas logar que as tabelas seriam verificadas/criadas.
+        logger.info(f"Verificando/Criando tabela: {self.agent_memory_table}")
+        logger.info(f"Verificando/Criando tabela: {self.user_context_table}")
+        logger.info(f"Verificando/Criando tabela: {self.proactive_tasks_table}")
+        # Exemplo de como criar uma tabela se não existir (requer permissões de DDL)
+        # try:
+        #     self.supabase.table(self.agent_memory_table).select("id").limit(0).execute()
+        # except Exception:
+        #     self.supabase.rpc("create_agent_memory_table", {}).execute()
+
+    def save_to_memory(self, agent_id: str, key: str, value: any):
+        if not self.supabase:
+            logger.warning("Supabase não inicializado. Não foi possível salvar na memória.")
+            return
+        try:
+            data, count = self.supabase.table(self.agent_memory_table).insert({
+                "agent_id": agent_id,
+                "key": key,
+                "value": json.dumps(value),
+                "timestamp": datetime.now().isoformat()
+            }).execute()
+            logger.info(f"Salvo na memória do agente {agent_id}: {key}")
+        except Exception as e:
+            logger.error(f"Erro ao salvar na memória do agente: {e}")
+
+    def load_from_memory(self, agent_id: str, key: str) -> Optional[any]:
+        if not self.supabase:
+            logger.warning("Supabase não inicializado. Não foi possível carregar da memória.")
+            return None
+        try:
+            response = self.supabase.table(self.agent_memory_table)
+            .select("value")
+            .eq("agent_id", agent_id)
+            .eq("key", key)
+            .order("timestamp", ascending=False)
+            .limit(1)
+            .execute()
+            
+            if response.data:
+                return json.loads(response.data[0]["value"])
+            return None
+        except Exception as e:
+            logger.error(f"Erro ao carregar da memória do agente: {e}")
+            return None
+
+    def save_user_context(self, user_id: str, context_data: dict):
+        if not self.supabase:
+            logger.warning("Supabase não inicializado. Não foi possível salvar contexto do usuário.")
+            return
+        try:
+            # Tenta atualizar, se não existir, insere
+            data, count = self.supabase.table(self.user_context_table).upsert({
+                "user_id": user_id,
+                "context_data": json.dumps(context_data),
+                "last_updated": datetime.now().isoformat()
+            }, on_conflict="user_id").execute()
+            logger.info(f"Contexto do usuário {user_id} salvo/atualizado.")
+        except Exception as e:
+            logger.error(f"Erro ao salvar contexto do usuário: {e}")
+
+    def load_user_context(self, user_id: str) -> Optional[dict]:
+        if not self.supabase:
+            logger.warning("Supabase não inicializado. Não foi possível carregar contexto do usuário.")
+            return None
+        try:
+            response = self.supabase.table(self.user_context_table)
+            .select("context_data")
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+            
+            if response.data:
+                return json.loads(response.data[0]["context_data"])
+            return None
+        except Exception as e:
+            logger.error(f"Erro ao carregar contexto do usuário: {e}")
+            return None
 
     def interpret_mission(self, user_message):
         """Interpreta uma missão em linguagem natural"""
@@ -286,8 +384,14 @@ class NexoGenesisAgent:
                 "message": f"Erro ao criar agente: {e}"
             }
 
-    def process_mission(self, user_message):
-        """Processa uma missão completa do usuário"""
+    def process_mission(self, user_message, user_id: str = "default_user"):
+        """Processa uma missão completa do usuário, agora com memória de longo prazo e proatividade."""
+        logger.info(f"NexoGenesis processando missão de {user_id}: {user_message}")
+        
+        # Carregar contexto do usuário
+        user_context = self.load_user_context(user_id) or {"history": []}
+        user_context["history"].append({"role": "user", "content": user_message, "timestamp": datetime.now().isoformat()})
+
         try:
             # Salvar missão no banco (exemplo conceitual)
             # mission_data = {
@@ -334,9 +438,17 @@ class NexoGenesisAgent:
             # mission_data["updated_at"] = datetime.now().isoformat()
             # self.supabase.table("missions").update(mission_data).eq("id", mission_data["id"]).execute()
             
+            # Salvar contexto atualizado
+            user_context["history"].append({"role": "nexo", "content": response_text, "timestamp": datetime.now().isoformat()})
+            self.save_user_context(user_id, user_context)
+            
+            # Verificar proatividade após processar a mensagem
+            self.check_for_proactive_tasks(user_id, user_message, response_text)
+
             return response_text
             
         except Exception as e:
+            logger.error(f"Erro ao processar missão: {e}")
             return f"Erro ao processar missão: {e}"
 
     def get_status(self):
@@ -358,46 +470,89 @@ class NexoGenesisAgent:
                 "evolution": evolution_status,
                 "capabilities": [
                     "Interpretação de missões em linguagem natural",
-                    "Criação automática de agentes",
-                    "Busca inteligente na internet",
-                    "Auto-construção de funcionalidades",
-                    "Evolução contínua autônoma"
+                    "Geração de código de agente",
+                    "Auto-construção avançada de funcionalidades",
+                    "Otimização de uso de LLM (custo/qualidade)",
+                    "Memória de longo prazo via Supabase",
+                    "Mecanismo de proatividade"
                 ]
             }
             return status
         except Exception as e:
-            return {"erro": str(e)}
-    
-    def force_evolution(self):
-        """Força um ciclo de evolução imediato"""
-        try:
-            self.evolution_module.force_evolution()
-            return {"success": True, "message": "Evolução forçada iniciada"}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-    
-    def search_internet(self, query):
-        """Busca informações na internet"""
-        try:
-            results = self.search_module.search_web(query, 5)
-            return {"success": True, "results": results}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-    
-    def get_construction_history(self):
-        """Retorna histórico de auto-construções"""
-        try:
-            return self.auto_constructor.get_construction_history()
-        except Exception as e:
-            return {"error": str(e)}
-    
-    def get_evolution_history(self):
-        """Retorna histórico de evoluções"""
-        try:
-            return self.evolution_module.get_evolution_history()
-        except Exception as e:
-            return {"error": str(e)}
+            logger.error(f"Erro ao obter status do NexoGenesis: {e}")
+            return {"nexo_genesis": "erro", "details": str(e)}
 
+    def check_for_proactive_tasks(self, user_id: str, last_user_message: str, last_nexo_response: str):
+        """Verifica se há oportunidades para ações proativas com base no contexto."""
+        logger.info(f"Verificando tarefas proativas para o usuário {user_id}...")
+        
+        # Exemplo de lógica proativa (pode ser expandida com modelos de IA)
+        if "problema de deployment" in last_user_message.lower() or "render" in last_user_message.lower():
+            task_description = "Monitorar o status do deployment no Render e notificar o usuário sobre quaisquer mudanças ou erros."
+            self.schedule_proactive_task(user_id, task_description, "deployment_monitoring")
+            logger.info(f"Tarefa proativa agendada: {task_description}")
+            
+        elif "otimizar créditos" in last_user_message.lower() or "créditos" in last_user_message.lower():
+            task_description = "Analisar o uso de créditos da API e sugerir otimizações."
+            self.schedule_proactive_task(user_id, task_description, "credit_optimization")
+            logger.info(f"Tarefa proativa agendada: {task_description}")
+
+        # Outras lógicas proativas podem ser adicionadas aqui
+
+    def schedule_proactive_task(self, user_id: str, description: str, task_type: str):
+        if not self.supabase:
+            logger.warning("Supabase não inicializado. Não foi possível agendar tarefa proativa.")
+            return
+        try:
+            data, count = self.supabase.table(self.proactive_tasks_table).insert({
+                "user_id": user_id,
+                "description": description,
+                "task_type": task_type,
+                "status": "pending",
+                "scheduled_at": datetime.now().isoformat()
+            }).execute()
+            logger.info(f"Tarefa proativa agendada no Supabase para {user_id}: {description}")
+        except Exception as e:
+            logger.error(f"Erro ao agendar tarefa proativa: {e}")
+
+# Exemplo de uso (para testes locais)
 if __name__ == "__main__":
-    nexo = NexoGenesisAgent()
-    print("Nexo Gênesis ativo e pronto para receber missões!")
+    # Certifique-se de que SUPABASE_URL e SUPABASE_KEY estão no seu .env
+    # e que as tabelas existem ou serão criadas automaticamente pelo Supabase
+    nexo_genesis = NexoGenesisAgent() # Alterado para NexoGenesisAgent
+    
+    test_user_id = "test_user_123"
+    
+    print("\n--- Teste de Mensagem 1 ---")
+    response1 = nexo_genesis.process_mission("Olá Nexo, como você está?", test_user_id)
+    print(f"Resposta do Nexo: {response1}")
+    
+    print("\n--- Teste de Mensagem 2 ---")
+    response2 = nexo_genesis.process_mission("Preciso de ajuda com um problema de deployment no Render.", test_user_id)
+    print(f"Resposta do Nexo: {response2}")
+    
+    print("\n--- Teste de Mensagem 3 ---")
+    response3 = nexo_genesis.process_mission("Qual o status da minha memória?", test_user_id)
+    print(f"Resposta do Nexo: {response3}")
+    
+    print("\n--- Teste de Mensagem 4 ---")
+    response4 = nexo_genesis.process_mission("Quero otimizar meus créditos de API.", test_user_id)
+    print(f"Resposta do Nexo: {response4}")
+    
+    print("\n--- Teste de Mensagem 5 ---")
+    response5 = nexo_genesis.process_mission("Você é proativo?", test_user_id)
+    print(f"Resposta do Nexo: {response5}")
+
+    print("\n--- Verificando memória do agente ---")
+    nexo_genesis.save_to_memory("NexoGenesis", "last_thought", "Refletindo sobre proatividade.")
+    last_thought = nexo_genesis.load_from_memory("NexoGenesis", "last_thought")
+    print(f"Último pensamento do NexoGenesis: {last_thought}")
+
+    print("\n--- Verificando contexto do usuário ---")
+    user_ctx = nexo_genesis.load_user_context(test_user_id)
+    print(f"Contexto do usuário {test_user_id}: {user_ctx}")
+
+    print("\n--- Verificando tarefas proativas agendadas (simulado) ---")
+    # Em um sistema real, haveria uma forma de consultar a tabela proactive_tasks_table
+    print("Verifique a tabela 'nexo_proactive_tasks' no Supabase para ver as tarefas agendadas.")
+
