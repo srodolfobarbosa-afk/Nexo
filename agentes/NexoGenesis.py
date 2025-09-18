@@ -132,7 +132,7 @@ class NexoGenesisAgent:
             return None
         try:
             response = self.supabase.table(self.agent_memory_table)
-            .select("value")
+    .select("value")
             .eq("agent_id", agent_id)
             .eq("key", key)
             .order("timestamp", ascending=False)
@@ -167,7 +167,7 @@ class NexoGenesisAgent:
             return None
         try:
             response = self.supabase.table(self.user_context_table)
-            .select("context_data")
+    .select("context_data")
             .eq("user_id", user_id)
             .limit(1)
             .execute()
