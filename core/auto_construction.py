@@ -50,10 +50,19 @@ class AutoConstructionModule:
             # 3. Reviewer AI - Revisão
             review = self.reviewer_ai(code, architecture)
 
+            # Corrigir fluxo se review não vier no formato esperado
+            if not isinstance(review, dict) or "approved" not in review:
+                return {
+                    "success": False,
+                    "feature": feature_request,
+                    "error": "Review do LLM não retornou JSON válido ou sem chave 'approved'.",
+                    "review": review,
+                    "timestamp": datetime.now().isoformat()
+                }
+
             # 4. Deployer AI - Deploy (se aprovado)
             if review["approved"]:
                 deployment = self.deployer_ai(code, architecture)
-                
                 # 5. Commit automático no GitHub
                 construction_result = {
                     "success": True,
@@ -64,8 +73,6 @@ class AutoConstructionModule:
                     "deployment": deployment,
                     "timestamp": datetime.now().isoformat()
                 }
-                
-                # Fazer commit automático no GitHub
                 if self.github.is_enabled():
                     print("📡 Fazendo commit automático no GitHub...")
                     github_success = self.github.auto_commit_construction_result(construction_result)
@@ -73,13 +80,12 @@ class AutoConstructionModule:
                 else:
                     print("⚠️ Integração GitHub desabilitada")
                     construction_result["github_commit"] = False
-                
                 return construction_result
             else:
                 return {
                     "success": False,
                     "feature": feature_request,
-                    "reason": review["issues"],
+                    "reason": review.get("issues", ["Erro desconhecido"]),
                     "timestamp": datetime.now().isoformat()
                 }
                 
@@ -183,25 +189,29 @@ class AutoConstructionModule:
         
         instruction = f"""
         Você é o Reviewer AI do ecossistema EcoGuardians.
-        
+
         Arquitetura:
         {json.dumps(architecture, indent=2)}
-        
+
         Código implementado:
         {json.dumps(code, indent=2)}
-        
-        Faça uma revisão completa seguindo os critérios:
-        1. Código segue princípios éticos do EcoGuardians
-        2. Implementação está completa
-        3. Não há vulnerabilidades de segurança
-        4. Código é compatível com estrutura existente
-        5. Score >= 7 para aprovação
+
+        Faça uma revisão completa e retorne um JSON com as chaves:
+        - approved (bool): se o código está pronto para deploy
+        - score (int): nota de 0 a 10
+        - strengths (list): pontos fortes
+        - issues (list): problemas encontrados
+        - suggestions (list): sugestões de melhoria
+        - security_check (str): status de segurança
+        - performance_check (str): status de performance
+        - compatibility_check (str): status de compatibilidade
+        Se não conseguir analisar, retorne approved=False e explique o motivo em issues.
         """
-        
+
         prompt = create_json_prompt(instruction, REVIEW_SCHEMA)
-        
+
         response = self.llm_caller(prompt, f"Revisar {architecture['overview']}")
-        
+
         # Usar função robusta de extração JSON
         fallback = {
             "approved": False,
@@ -213,8 +223,16 @@ class AutoConstructionModule:
             "performance_check": "Falhou",
             "compatibility_check": "Falhou"
         }
-        
-        review = safe_json_response(response, fallback)
+
+        # Corrigir resposta se não vier JSON válido
+        try:
+            review = safe_json_response(response, fallback)
+            if "approved" not in review:
+                review["approved"] = False
+                review["issues"] = review.get("issues", []) + ["Chave 'approved' ausente no retorno do LLM."]
+        except Exception as e:
+            review = fallback
+            review["issues"].append(f"Erro ao extrair JSON: {e}")
         self._log_construction_step("reviewer", architecture["overview"], review)
         return review
     
