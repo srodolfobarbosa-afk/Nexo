@@ -1,0 +1,12 @@
+[Unit]
+Description=Nexo AI Service
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/nexo
+ExecStart=/bin/bash /home/ubuntu/nexo/start.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
