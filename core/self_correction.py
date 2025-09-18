@@ -76,18 +76,22 @@ class SelfCorrectionModule:
         try:
             # Simples recuperação. Em um sistema real, usaria embeddings para busca semântica.
             if query:
-                response = self.supabase.table(self.learning_memory_table)
-                .select("lesson, action_taken, effectiveness, context")
-                .ilike("lesson", f"%{query}%")
-                .order("timestamp", ascending=False)
-                .limit(limit)
-                .execute()
+                response = (
+                    self.supabase.table(self.learning_memory_table)
+                    .select("lesson, action_taken, effectiveness, context")
+                    .ilike("lesson", f"%{query}%")
+                    .order("timestamp", ascending=False)
+                    .limit(limit)
+                    .execute()
+                )
             else:
-                response = self.supabase.table(self.learning_memory_table)
-                .select("lesson, action_taken, effectiveness, context")
-                .order("timestamp", ascending=False)
-                .limit(limit)
-                .execute()
+                response = (
+                    self.supabase.table(self.learning_memory_table)
+                    .select("lesson, action_taken, effectiveness, context")
+                    .order("timestamp", ascending=False)
+                    .limit(limit)
+                    .execute()
+                )
             
             return response.data
         except Exception as e:

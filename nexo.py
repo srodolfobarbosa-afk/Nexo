@@ -45,8 +45,12 @@ def processar_missao():
         if not user_message:
             return jsonify({"response": "Por favor, envie uma mensagem válida."})
         
-        # Importar e usar o fluxo de autoconstrução
-        from scripts.generate_agent import main as generate_agent_main
+        from core.auto_construction import AutoConstructionModule
+        # Instanciar o módulo de auto-construção
+        def llm_caller(prompt, context):
+            # Aqui você pode integrar com seu LLM real
+            return '{"overview": "Missão processada", "components": ["auto"]}'
+        auto_constructor = AutoConstructionModule(llm_caller)
         
         # Capturar a saída do console para retornar ao usuário
         old_stdout = sys.stdout
@@ -54,11 +58,10 @@ def processar_missao():
         sys.stdout = redirected_output
 
         try:
-            # Processar a missão usando o fluxo de autoconstrução
-            # Por enquanto, rodamos em dry_run=True para testar a geração sem commitar
-            generate_agent_main(user_message, dry_run=True)
+            # Processar a missão usando o AutoConstructionModule
+            result = auto_constructor.auto_construct_feature(user_message)
             output = redirected_output.getvalue()
-            return jsonify({"response": output})
+            return jsonify({"response": f"Resultado da missão: {result}\nLogs: {output}"})
         except Exception as e:
             output = redirected_output.getvalue()
             return jsonify({"response": f"Houve um erro ao processar a missão: {e}\nLogs: {output}"}), 500

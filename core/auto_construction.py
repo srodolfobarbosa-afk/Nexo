@@ -29,16 +29,27 @@ class AutoConstructionModule:
         """
         try:
             print(f"🚀 Iniciando auto-construção: {feature_request}")
-            
+
+            # 0. Pesquisa de mercado proativa
+            print("🔎 Realizando pesquisa de mercado...")
+            mercado_results = self.search.search_web(f"{feature_request} market analysis opportunities", 3)
+            print(f"Resultados da pesquisa de mercado: {json.dumps(mercado_results, indent=2)}")
+
+            # 0.1 Análise e estudo proativo
+            print("📊 Analisando e estudando oportunidades...")
+            estudo_prompt = f"Analise os resultados de mercado e gere oportunidades de receita e inovação para o sistema. Resultados: {json.dumps(mercado_results, indent=2)}"
+            estudo_result = self.llm_caller(estudo_prompt, feature_request)
+            print(f"Estudo/Oportunidades: {estudo_result}")
+
             # 1. Architect AI - Planejamento
             architecture = self.architect_ai(feature_request)
-            
+
             # 2. Coder AI - Implementação
             code = self.coder_ai(architecture)
-            
+
             # 3. Reviewer AI - Revisão
             review = self.reviewer_ai(code, architecture)
-            
+
             # 4. Deployer AI - Deploy (se aprovado)
             if review["approved"]:
                 deployment = self.deployer_ai(code, architecture)
@@ -306,10 +317,20 @@ if __name__ == "__main__":
     # Teste do módulo
     print("🧪 Testando módulo de auto-construção...")
     
-    # Simulação de LLM caller
-    def mock_llm_caller(prompt, context):
-        return '{"overview": "Teste", "components": ["teste"]}'
-    
-    auto_constructor = AutoConstructionModule(mock_llm_caller)
+    # Integração real com Gemini
+    import google.generativeai as genai
+    import os
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+    def llm_caller(prompt, context):
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            response = model.generate_content(f"{prompt}\nContexto: {context}")
+            return response.text
+        except Exception as e:
+            print(f"Erro ao chamar Gemini: {e}")
+            return '{"erro": "Falha na chamada Gemini"}'
+
+    auto_constructor = AutoConstructionModule(llm_caller)
     result = auto_constructor.auto_construct_feature("Sistema de notificações por email")
     print(f"Resultado: {result}")

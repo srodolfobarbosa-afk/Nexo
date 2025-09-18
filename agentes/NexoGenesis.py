@@ -16,6 +16,14 @@ from core.json_utils import extract_json, safe_json_response, create_json_prompt
 import ollama
 import google.generativeai as genai
 import re
+print(f"DEBUG: Chave da API do Gemini: {os.getenv('GOOGLE_API_KEY')}")
+
+try:
+    genai.configure(api_key=API_KEY_GEMINI)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    print("DEBUG: Conexão com o Gemini bem-sucedida.")
+except Exception as e:
+    print(f"ERRO: Conexão com o Gemini falhou. {e}")
 
 load_dotenv()
 
@@ -28,6 +36,13 @@ logger = logging.getLogger(__name__)
 
 class NexoGenesisAgent:
     def __init__(self):
+        # Informações do criador/dono do sistema
+        self.owner_info = {
+            "nome": "Rodolfo Barbosa",
+            "chat_id_telegram": "8016202357",
+            "email": "srodolfobarbosa@gmail.com",
+            "pix": "137.27339730"
+        }
         # Manter a inicialização original do Supabase via get_supabase_client()
         self.supabase = get_supabase_client()
         self.gemini_api_key = os.environ.get("GEMINI_API_KEY")
@@ -66,6 +81,26 @@ class NexoGenesisAgent:
             "Minha memória e proatividade foram questionadas. Preciso aprender com o histórico e agir de forma mais concreta.",
             {"context_source": "user_feedback", "timestamp": datetime.now().isoformat()}
         )
+        # Iniciar automação proativa contínua
+        self.start_proactive_automation()
+    
+    def start_proactive_automation(self, user_id="default_user"):
+        import threading, time
+        def automation_loop():
+            while True:
+                try:
+                    # Exemplo de missão proativa: buscar oportunidades de mercado
+                    proactive_mission = "Pesquisar oportunidades de receita e inovação para o sistema Nexo."
+                    print(f"🤖 [Proativo] Iniciando missão automática: {proactive_mission}")
+                    result = self.process_mission(proactive_mission, user_id)
+                    print(f"🤖 [Proativo] Resultado da missão: {result}")
+                    # Enviar mensagem automática (pode ser por e-mail, Telegram, etc.)
+                    # Aqui apenas imprime, mas pode ser integrado com notificações reais
+                except Exception as e:
+                    print(f"Erro na automação proativa: {e}")
+                time.sleep(600)  # Executa a cada 10 minutos (ajuste conforme necessário)
+        t = threading.Thread(target=automation_loop, daemon=True)
+        t.start()
 
 
     def initialize_database(self):
@@ -131,13 +166,15 @@ class NexoGenesisAgent:
             logger.warning("Supabase não inicializado. Não foi possível carregar da memória.")
             return None
         try:
-            response = self.supabase.table(self.agent_memory_table)
-            .select("value")
-            .eq("agent_id", agent_id)
-            .eq("key", key)
-            .order("timestamp", ascending=False)
-            .limit(1)
-            .execute()
+            response = (
+                self.supabase.table(self.agent_memory_table)
+                .select("value")
+                .eq("agent_id", agent_id)
+                .eq("key", key)
+                .order("timestamp", ascending=False)
+                .limit(1)
+                .execute()
+            )
             
             if response.data:
                 return json.loads(response.data[0]["value"])
@@ -166,11 +203,13 @@ class NexoGenesisAgent:
             logger.warning("Supabase não inicializado. Não foi possível carregar contexto do usuário.")
             return None
         try:
-            response = self.supabase.table(self.user_context_table)
-            .select("context_data")
-            .eq("user_id", user_id)
-            .limit(1)
-            .execute()
+            response = (
+                self.supabase.table(self.user_context_table)
+                .select("context_data")
+                .eq("user_id", user_id)
+                .limit(1)
+                .execute()
+            )
             
             if response.data:
                 return json.loads(response.data[0]["context_data"])
@@ -406,59 +445,64 @@ class NexoGenesisAgent:
 
         try:
             # Salvar missão no banco (exemplo conceitual)
-            # mission_data = {
-            #     "user_message": user_message,
-            #     "status": "processing",
-            #     "created_at": datetime.now().isoformat()
-            # }
-            # self.supabase.table("missions").insert(mission_data).execute()
-            
+            # ...existing code...
+
             # Interpretar missão
             interpretation = self.interpret_mission(user_message)
-            
             response_text = interpretation.get("response", "Processando sua missão...")
-            
+
+            # Lógica de auto-correção proativa
+            erro_detectado = False
+            if "erro" in response_text.lower() or "falha" in response_text.lower():
+                erro_detectado = True
+                self.self_correction_module.log_error(
+                    error_type="Erro detectado na missão",
+                    description=response_text,
+                    context={"user_message": user_message, "timestamp": datetime.now().isoformat()}
+                )
+                self.self_correction_module.reflect_on_performance(
+                    user_feedback=response_text,
+                    current_context={"user_message": user_message, "timestamp": datetime.now().isoformat()}
+                )
+                # Acionar auto-construção para correção
+                response_text += "\n\n🔧 Iniciando auto-correção proativa..."
+                construction_result = self.auto_constructor.auto_construct_feature(f"Corrija: {user_message}")
+                if construction_result["success"]:
+                    response_text += f"\n✅ Auto-correção concluída!"
+                else:
+                    response_text += f"\n❌ Falha na auto-correção: {construction_result.get('reason', 'Erro desconhecido')}"
+
+            # Fluxo normal de criação de agente ou auto-construção
             if interpretation.get("action") == "create_agent":
-                # Criar novo agente
                 agent_result = self.create_agent(
                     interpretation.get("agent_name"),
                     interpretation.get("description"),
                     interpretation.get("requirements")
                 )
-                
                 if agent_result["success"]:
                     response_text += "\n\n✅ " + agent_result.get("message", "")
-                    # mission_data["agent_created"] = interpretation.get("agent_name")
                 else:
                     response_text += "\n\n❌ " + agent_result.get("message", "Erro desconhecido")
-            
+
             elif interpretation.get("action") == "auto_construct" or interpretation.get("use_auto_construction"):
-                # Usar auto-construção avançada
                 response_text += "\n\n🛠️ Iniciando auto-construção avançada..."
-                
                 construction_result = self.auto_constructor.auto_construct_feature(user_message)
-                
                 if construction_result["success"]:
                     response_text += f"\n\n✅ Auto-construção concluída com sucesso!"
                     response_text += f"\n📁 Arquivos criados: {len(construction_result.get('code', {}).get('files', {}))}"
                     response_text += f"\n🔧 Deploy realizado: {construction_result.get('deployment', {}).get('status', 'N/A')}"
                 else:
                     response_text += f"\n\n❌ Auto-construção falhou: {construction_result.get('reason', 'Erro desconhecido')}"
-                
-            # mission_data["response"] = response_text
-            # mission_data["status"] = "completed"
-            # mission_data["updated_at"] = datetime.now().isoformat()
-            # self.supabase.table("missions").update(mission_data).eq("id", mission_data["id"]).execute()
-            
+
             # Salvar contexto atualizado
             user_context["history"].append({"role": "nexo", "content": response_text, "timestamp": datetime.now().isoformat()})
             self.save_user_context(user_id, user_context)
-            
+
             # Verificar proatividade após processar a mensagem
             self.check_for_proactive_tasks(user_id, user_message, response_text)
 
             return response_text
-            
+
         except Exception as e:
             logger.error(f"Erro ao processar missão: {e}")
             return f"Erro ao processar missão: {e}"
