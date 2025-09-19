@@ -52,11 +52,17 @@ class AutoConstructionModule:
 
             # Corrigir fluxo se review não vier no formato esperado
             if not isinstance(review, dict) or "approved" not in review:
+                # Força formato esperado
+                review_format = {
+                    "approved": False,
+                    "reason": "Review do LLM não retornou JSON válido ou sem chave 'approved'.",
+                    "raw_review": review
+                }
                 return {
                     "success": False,
                     "feature": feature_request,
                     "error": "Review do LLM não retornou JSON válido ou sem chave 'approved'.",
-                    "review": review,
+                    "review": review_format,
                     "timestamp": datetime.now().isoformat()
                 }
 
@@ -82,18 +88,33 @@ class AutoConstructionModule:
                     construction_result["github_commit"] = False
                 return construction_result
             else:
+                # Garante que sempre haja 'approved' e motivo
                 return {
                     "success": False,
                     "feature": feature_request,
+                    "approved": review.get("approved", False),
                     "reason": review.get("issues", ["Erro desconhecido"]),
                     "timestamp": datetime.now().isoformat()
                 }
                 
         except Exception as e:
+            # Lógica para erro 403 e ação humana
+            error_msg = str(e)
+            if "403" in error_msg or "forbidden" in error_msg.lower():
+                print("Erro 403: API do Google. Necessária ação manual: ativar permissão no Google Cloud Console.")
+                # Log especial para ação humana
+                return {
+                    "success": False,
+                    "feature": feature_request,
+                    "approved": False,
+                    "error": error_msg,
+                    "action_required": "Ativar permissão no Google Cloud Console.",
+                    "timestamp": datetime.now().isoformat()
+                }
             return {
                 "success": False,
                 "feature": feature_request,
-                "error": str(e),
+                "error": error_msg,
                 "timestamp": datetime.now().isoformat()
             }
     

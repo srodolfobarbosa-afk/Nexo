@@ -85,9 +85,12 @@ class InternetSearchModule:
                 snippet_elem = result.find('a', class_='result__snippet')
                 
                 if title_elem:
+                    link = title_elem.get('href')
+                    if link and link.startswith('//'):
+                        link = 'https:' + link
                     results.append({
                         "title": title_elem.get_text(strip=True),
-                        "link": title_elem.get('href'),
+                        "link": link,
                         "snippet": snippet_elem.get_text(strip=True) if snippet_elem else "",
                         "source": "duckduckgo"
                     })
