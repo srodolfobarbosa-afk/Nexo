@@ -2,6 +2,7 @@ import os
 import json
 import logging
 from datetime import datetime
+from typing import Optional
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
@@ -131,13 +132,13 @@ class NexoGenesisAgent:
             logger.warning("Supabase não inicializado. Não foi possível carregar da memória.")
             return None
         try:
-            response = self.supabase.table(self.agent_memory_table)
-    .select("value")
-            .eq("agent_id", agent_id)
-            .eq("key", key)
-            .order("timestamp", ascending=False)
-            .limit(1)
-            .execute()
+            response = self.supabase.table(self.agent_memory_table)\
+                .select("value")\
+                .eq("agent_id", agent_id)\
+                .eq("key", key)\
+                .order("timestamp", ascending=False)\
+                .limit(1)\
+                .execute()
             
             if response.data:
                 return json.loads(response.data[0]["value"])
@@ -166,11 +167,11 @@ class NexoGenesisAgent:
             logger.warning("Supabase não inicializado. Não foi possível carregar contexto do usuário.")
             return None
         try:
-            response = self.supabase.table(self.user_context_table)
-    .select("context_data")
-            .eq("user_id", user_id)
-            .limit(1)
-            .execute()
+            response = self.supabase.table(self.user_context_table)\
+                .select("context_data")\
+                .eq("user_id", user_id)\
+                .limit(1)\
+                .execute()
             
             if response.data:
                 return json.loads(response.data[0]["context_data"])

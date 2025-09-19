@@ -76,18 +76,18 @@ class SelfCorrectionModule:
         try:
             # Simples recuperação. Em um sistema real, usaria embeddings para busca semântica.
             if query:
-                response = self.supabase.table(self.learning_memory_table)
-                .select("lesson, action_taken, effectiveness, context")
-                .ilike("lesson", f"%{query}%")
-                .order("timestamp", ascending=False)
-                .limit(limit)
-                .execute()
+                response = self.supabase.table(self.learning_memory_table)\
+                    .select("lesson, action_taken, effectiveness, context")\
+                    .ilike("lesson", f"%{query}%")\
+                    .order("timestamp", ascending=False)\
+                    .limit(limit)\
+                    .execute()
             else:
-                response = self.supabase.table(self.learning_memory_table)
-                .select("lesson, action_taken, effectiveness, context")
-                .order("timestamp", ascending=False)
-                .limit(limit)
-                .execute()
+                response = self.supabase.table(self.learning_memory_table)\
+                    .select("lesson, action_taken, effectiveness, context")\
+                    .order("timestamp", ascending=False)\
+                    .limit(limit)\
+                    .execute()
             
             return response.data
         except Exception as e:
@@ -104,7 +104,7 @@ class SelfCorrectionModule:
             lesson = "Manter o contexto da conversa e o histórico de ações é crucial para a proatividade e a confiança do usuário."
             action = "Priorizar a recuperação e o uso do histórico de conversas e ações passadas em todas as interações futuras."
             effectiveness = "alta" # Espera-se alta eficácia se aplicado
-            selfn.add_to_learning_memory(lesson, action, effectiveness, current_context)
+            self.add_to_learning_memory(lesson, action, effectiveness, current_context)
             
         if "discurso" in user_feedback.lower() or "ação real" in user_feedback.lower() or "prático" in user_feedback.lower():
             lesson = "A proatividade deve se manifestar em ações concretas e executáveis, não apenas em planos ou promessas."
@@ -131,10 +131,10 @@ if __name__ == "__main__":
     lessons = correction_module.retrieve_learning_lessons()
     print("\n--- Lições Aprendidas ---")
     for lesson in lessons:
-        print(f"Lição: {lesson["lesson"]}\nAção: {lesson["action_taken"]}\nEficácia: {lesson["effectiveness"]}\n")
+        print(f"Lição: {lesson['lesson']}\nAção: {lesson['action_taken']}\nEficácia: {lesson['effectiveness']}\n")
 
     lessons_about_context = correction_module.retrieve_learning_lessons(query="contexto")
     print("\n--- Lições sobre Contexto ---")
     for lesson in lessons_about_context:
-        print(f"Lição: {lesson["lesson"]}\nAção: {lesson["action_taken"]}\nEficácia: {lesson["effectiveness"]}\n")
+        print(f"Lição: {lesson['lesson']}\nAção: {lesson['action_taken']}\nEficácia: {lesson['effectiveness']}\n")
 
