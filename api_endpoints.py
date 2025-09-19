@@ -8,13 +8,14 @@ import logging
 from datetime import datetime
 from flask import request, jsonify
 from dotenv import load_dotenv
+import ollama
 
 # Importar módulos do Nexo
 try:
-    from agentes.NexoGenesis import NexoGenesis
+    from agentes.NexoGenesis import NexoGenesisAgent
 except ImportError:
     # Fallback se o módulo não estiver disponível
-    NexoGenesis = None
+    NexoGenesisAgent = None
 
 load_dotenv()
 
@@ -25,13 +26,22 @@ logger = logging.getLogger(__name__)
 class NexoAPI:
     def __init__(self):
         self.nexo_genesis = None
+        self.ollama_client = None
+        self.initialize_ollama()
         self.initialize_nexo()
+
+    def initialize_ollama(self):
+        try:
+            self.ollama_client = ollama.Client()
+            logger.info("Cliente Ollama inicializado com sucesso!")
+        except Exception as e:
+            logger.error(f"Erro ao inicializar Ollama: {e}")
     
     def initialize_nexo(self):
         """Inicializar o Nexo Genesis"""
         try:
-            if NexoGenesis:
-                self.nexo_genesis = NexoGenesis()
+            if NexoGenesisAgent:
+                self.nexo_genesis = NexoGenesisAgent()
                 logger.info("Nexo Genesis inicializado com sucesso")
             else:
                 logger.warning("NexoGenesis não disponível, usando fallback")
@@ -44,23 +54,36 @@ class NexoAPI:
             message = message_data.get('message', '')
             user_id = message_data.get('user_id', '')
             source = message_data.get('source', 'unknown')
-            
+
             logger.info(f"Processando mensagem de {user_id} via {source}: {message[:50]}...")
-            
+
+            llama_response = None
+            if self.ollama_client and message:
+                try:
+                    chat_response = self.ollama_client.chat(
+                        model="llama2",
+                        messages=[{"role": "user", "content": message}]
+                    )
+                    llama_response = chat_response['message']['content']
+                except Exception as e:
+                    logger.warning(f"Erro ao gerar resposta com Llama: {e}")
+
             # Se o Nexo Genesis estiver disponível, usar ele
             if self.nexo_genesis:
                 response = self.nexo_genesis.processar_mensagem(message, user_id)
+            elif llama_response:
+                response = f"[Llama] {llama_response}"
             else:
                 # Fallback: resposta simples
                 response = self.generate_fallback_response(message)
-            
+
             return {
                 'success': True,
                 'response': response,
                 'timestamp': datetime.now().isoformat(),
-                'processed_by': 'nexo_genesis' if self.nexo_genesis else 'fallback'
+                'processed_by': 'nexo_genesis' if self.nexo_genesis else ('llama' if llama_response else 'fallback')
             }
-            
+
         except Exception as e:
             logger.error(f"Erro ao processar mensagem: {e}")
             return {

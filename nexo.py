@@ -87,7 +87,17 @@ except ImportError as e:
     print(f"⚠️ Não foi possível carregar rotas da API: {e}")
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    import socket
+    def find_free_port(start_port=5000, max_tries=10):
+        port = start_port
+        for _ in range(max_tries):
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                if s.connect_ex(("127.0.0.1", port)) != 0:
+                    return port
+                port += 1
+        raise RuntimeError("Não há portas livres disponíveis.")
+
+    port = find_free_port(int(os.environ.get("PORT", 5000)))
     print("🌱 EcoGuardians - Sistema Iniciado")
     print("🤖 Nexo Gênesis - Agente Orquestrador Ativo")
     print(f"💬 Interface de Chat disponível em: http://127.0.0.1:{port}")
