@@ -11,33 +11,19 @@ class DebateEnvironment:
             falas.append((agent.name, fala))
         return falas
 
-class AgenteBase:
-    def __init__(self, nome):
-        self.nome = nome
-    def falar(self, problema):
-        return f"Minha análise sobre '{problema}'..."
-
-    def debate(self, problem):
-        print(f"\n[Debate] Problema apresentado: {problem}")
-        opinions = {}
-        for agent in self.agents:
-            opinion = agent.give_opinion(problem)
-            print(f"{agent.name} diz: {opinion}")
-            opinions[agent.name] = opinion
-        return opinions
-
-class Agent:
-    def __init__(self, name):
-        self.name = name
-    def give_opinion(self, problem):
-        # Cada agente pode ter lógica própria
-        return f"Minha análise sobre '{problem}'... (simulação)"
-
 # Exemplo de uso:
 if __name__ == "__main__":
+    class Agent:
+        def __init__(self, name):
+            self.name = name
+        def falar(self, problema):
+            return f"Minha análise sobre '{problema}'... (simulação)"
+
     analyzer = Agent("Analyzer")
     executor = Agent("Executor")
     reviewer = Agent("Reviewer")
+    env = DebateEnvironment([analyzer, executor, reviewer])
+    env.debate("Testar debate de agentes")
     debate_env = DebateEnvironment([analyzer, executor, reviewer])
     problem = "Como otimizar o uso das chaves de API?"
     opinions = debate_env.debate(problem)

@@ -86,8 +86,11 @@ class InternetSearchModule:
                 
                 if title_elem:
                     link = title_elem.get('href')
-                    if link and link.startswith('//'):
-                        link = 'https:' + link
+                    if link:
+                        if link.startswith('//'):
+                            link = 'https:' + link
+                        elif not link.startswith('http'):
+                            link = 'https://' + link.lstrip('/')
                     results.append({
                         "title": title_elem.get_text(strip=True),
                         "link": link,

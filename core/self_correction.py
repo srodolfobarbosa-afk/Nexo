@@ -108,7 +108,7 @@ class SelfCorrectionModule:
             lesson = "Manter o contexto da conversa e o histórico de ações é crucial para a proatividade e a confiança do usuário."
             action = "Priorizar a recuperação e o uso do histórico de conversas e ações passadas em todas as interações futuras."
             effectiveness = "alta" # Espera-se alta eficácia se aplicado
-            selfn.add_to_learning_memory(lesson, action, effectiveness, current_context)
+            self.add_to_learning_memory(lesson, action, effectiveness, current_context)
             
         if "discurso" in user_feedback.lower() or "ação real" in user_feedback.lower() or "prático" in user_feedback.lower():
             lesson = "A proatividade deve se manifestar em ações concretas e executáveis, não apenas em planos ou promessas."

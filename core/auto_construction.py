@@ -1,3 +1,44 @@
+class AutoConstructionModule:
+    """
+    Módulo de auto-construção do Nexo Gênesis
+    Pipeline: Architect AI → Coder AI → Reviewer AI → Deployer AI
+    """
+    def __init__(self, llm_caller):
+        self.supabase = get_supabase_client()
+        self.search = InternetSearchModule()
+        self.github = GitHubIntegration()
+        self.llm_caller = llm_caller  # Referência para chamar LLMs
+        self.construction_history = []
+
+    def gerar_dockerfile(self, app_dir=".", python_version="3.12"):
+        """
+        Gera um Dockerfile básico para o projeto Python.
+        """
+        dockerfile = f"""
+        FROM python:{python_version}-slim
+        WORKDIR /app
+        COPY {app_dir} /app
+        RUN pip install --no-cache-dir -r requirements.txt
+        CMD [\"python\", \"nexo.py\"]
+        """
+        with open("Dockerfile", "w") as f:
+            f.write(dockerfile)
+        print("✅ Dockerfile gerado.")
+        return dockerfile
+
+    def gerar_script_deploy(self):
+        """
+        Gera um script de deploy simples (shell) para rodar o container Docker.
+        """
+        script = """
+        #!/bin/bash
+        docker build -t nexo-autonomo .
+        docker run -d --name nexo-autonomo -p 5000:5000 nexo-autonomo
+        """
+        with open("deploy_nexo.sh", "w") as f:
+            f.write(script)
+        print("✅ Script de deploy gerado.")
+        return script
 import os
 import json
 import subprocess
@@ -69,6 +110,9 @@ class AutoConstructionModule:
             # 4. Deployer AI - Deploy (se aprovado)
             if review["approved"]:
                 deployment = self.deployer_ai(code, architecture)
+                # 4.1 Gerar Dockerfile e script de deploy
+                dockerfile = self.gerar_dockerfile()
+                deploy_script = self.gerar_script_deploy()
                 # 5. Commit automático no GitHub
                 construction_result = {
                     "success": True,
@@ -77,6 +121,8 @@ class AutoConstructionModule:
                     "code": code,
                     "review": review,
                     "deployment": deployment,
+                    "dockerfile": dockerfile,
+                    "deploy_script": deploy_script,
                     "timestamp": datetime.now().isoformat()
                 }
                 if self.github.is_enabled():

@@ -1,9 +1,11 @@
+from core.web_agent import WebAgent
 import os
 import json
 import logging
 from datetime import datetime
 from supabase import create_client, Client
 from dotenv import load_dotenv
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 # Importações originais que devem ser mantidas
 import requests
@@ -18,14 +20,17 @@ import google.generativeai as genai
 import re
 print(f"DEBUG: Chave da API do Gemini: {os.getenv('GOOGLE_API_KEY')}")
 
+from typing import Optional
+gemini_api_key = os.getenv('GEMINI_API_KEY')
 try:
-    genai.configure(api_key=API_KEY_GEMINI)
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    print("DEBUG: Conexão com o Gemini bem-sucedida.")
+    if gemini_api_key:
+        genai.configure(api_key=gemini_api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        print("DEBUG: Conexão com o Gemini bem-sucedida.")
+    else:
+        print("ERRO: GEMINI_API_KEY não configurada.")
 except Exception as e:
     print(f"ERRO: Conexão com o Gemini falhou. {e}")
-
-load_dotenv()
 
 # Configuração de logging
 logging.basicConfig(
@@ -47,13 +52,94 @@ class NexoGenesisAgent:
         self.supabase = get_supabase_client()
         self.gemini_api_key = os.environ.get("GEMINI_API_KEY")
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
+        self.search_module = InternetSearchModule() # Mantenha por enquanto
+        self.web_agent = WebAgent() # Novo WebAgent
+        print("🌐 Agente de navegação web (Playwright) ativo.")
         self.groq_api_key = os.environ.get("GROQ_API_KEY")
         self.llm_provider = os.environ.get("NEXO_LLM_PROVIDER", "google")
-        
-        # Inicializar módulos de auto-construção
-        self.search_module = InternetSearchModule()
+
+        # Inicializar módulos de auto-construção, automação web e memória vetorial
+        from core.vector_memory import VectorMemory
+        self.vector_memory = VectorMemory()
         self.auto_constructor = AutoConstructionModule(self.call_llm)
         self.evolution_module = EvolutionModule(self)
+        self.sentiment_analyzer = SentimentIntensityAnalyzer()
+
+        # Estrutura inicial de personalidade dinâmica
+        self.personality = {
+            "estilo": "formal",
+            "gírias": False,
+            "entusiasmo": 0.5,
+            "empatia": 0.5
+        }
+        # Tabela para registrar tentativas de evolução
+        self.evolution_attempts_table = "evolution_attempts"
+        self._ensure_evolution_attempts_table()
+    def log_evolution_attempt(self, cycle_number, mission_prompt, llm_response_raw, success, reason_for_failure=None, details=None):
+        """
+        Registra uma tentativa de evolução na tabela evolution_attempts do Supabase.
+        """
+        if not self.supabase:
+            print("Supabase não inicializado. Não foi possível registrar tentativa de evolução.")
+            return
+        try:
+            data = {
+                "timestamp": datetime.now().isoformat(),
+                "cycle_number": cycle_number,
+                "mission_prompt": mission_prompt,
+                "llm_response_raw": json.dumps(llm_response_raw, ensure_ascii=False),
+                "success": success,
+                "reason_for_failure": reason_for_failure,
+                "details": json.dumps(details, ensure_ascii=False) if details else None
+            }
+            self.supabase.table(self.evolution_attempts_table).insert(data).execute()
+            print(f"📝 Tentativa de evolução registrada: ciclo {cycle_number}, sucesso: {success}")
+        except Exception as e:
+            print(f"Erro ao registrar tentativa de evolução: {e}")
+
+    def _ensure_evolution_attempts_table(self):
+        """
+        Garante que a tabela evolution_attempts existe no Supabase.
+        """
+        try:
+            self.supabase.table(self.evolution_attempts_table).select("id").limit(0).execute()
+            print(f"Tabela '{self.evolution_attempts_table}' existe.")
+        except Exception:
+            print(f"Tabela '{self.evolution_attempts_table}' não existe. Crie manualmente no Supabase com o seguinte SQL:")
+            print("""
+CREATE TABLE evolution_attempts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    timestamp TEXT,
+    cycle_number INTEGER,
+    mission_prompt TEXT,
+    llm_response_raw TEXT,
+    success BOOLEAN,
+    reason_for_failure TEXT,
+    details TEXT
+);
+""")
+    def registrar_ideia_vetorial(self, texto, metadados=None):
+        """
+        Salva uma ideia/interação como embedding vetorial.
+        """
+        doc_id = self.vector_memory.salvar_ideia(texto, metadados)
+        print(f"✅ Ideia registrada na memória vetorial: {doc_id}")
+        return doc_id
+
+    def buscar_ideias_semelhantes(self, consulta, k=3):
+        """
+        Busca ideias/interações semelhantes por similaridade semântica.
+        """
+        resultados = self.vector_memory.buscar_similaridade(consulta, k)
+        print(f"🔎 Ideias semelhantes encontradas: {resultados}")
+        return resultados
+    def pesquisa_web_avancada(self, url, seletor=None):
+        """
+        Usa o WebAgent para buscar e extrair dados de uma página web.
+        """
+        resultado = self.web_agent.buscar_e_extrair(url, seletor)
+        self.save_to_memory("NexoGenesis", f"web_extracao_{url}", resultado)
+        return resultado
         
         print("🌱 Nexo Gênesis inicializado - Agente Orquestrador ativo.")
         print("🔍 Módulo de busca na internet ativo.")
@@ -106,6 +192,17 @@ class NexoGenesisAgent:
     def initialize_database(self):
         """Inicializa as tabelas necessárias no Supabase"""
         try:
+
+            try:
+                from langchain.llms import OpenAI as LangOpenAI
+                from langchain.llms import Ollama as LangOllama
+                from langchain.llms import GooglePalm as LangGemini
+                from langchain.agents import initialize_agent, Tool
+                from langchain.memory import ConversationBufferMemory
+                from langchain.prompts import PromptTemplate
+            except ImportError:
+                print("LangChain não instalado. Execute 'pip install langchain' para usar o motor de raciocínio avançado.")
+
             # Tabela de missões
             # Esta é uma representação conceitual. No Supabase, você criaria as tabelas via SQL ou UI.
             # Exemplo de SQL para criar a tabela 'missions':
@@ -135,16 +232,20 @@ class NexoGenesisAgent:
             print(f"Erro ao inicializar banco de dados: {e}")
 
     def _ensure_tables_exist(self):
-        # Esta é uma simulação. Em um ambiente real, você usaria migrações ou um ORM.
-        # Para este contexto, vamos apenas logar que as tabelas seriam verificadas/criadas.
-        logger.info(f"Verificando/Criando tabela: {self.agent_memory_table}")
-        logger.info(f"Verificando/Criando tabela: {self.user_context_table}")
-        logger.info(f"Verificando/Criando tabela: {self.proactive_tasks_table}")
-        # Exemplo de como criar uma tabela se não existir (requer permissões de DDL)
-        # try:
-        #     self.supabase.table(self.agent_memory_table).select("id").limit(0).execute()
-        # except Exception:
-        #     self.supabase.rpc("create_agent_memory_table", {}).execute()
+        # Verifica e cria tabelas essenciais no Supabase
+        tabelas = [self.agent_memory_table, self.user_context_table, self.proactive_tasks_table, "agent_learning_memory", "agent_error_log"]
+        for tabela in tabelas:
+            try:
+                self.supabase.table(tabela).select("id").limit(0).execute()
+                logger.info(f"Tabela '{tabela}' existe.")
+            except Exception:
+                logger.warning(f"Tabela '{tabela}' não existe. Tentando criar...")
+                try:
+                    # Exemplo: criar tabela via função RPC customizada ou instrução SQL
+                    self.supabase.rpc(f"create_{tabela}", {}).execute()
+                    logger.info(f"Tabela '{tabela}' criada via RPC.")
+                except Exception as e:
+                    logger.error(f"Falha ao criar tabela '{tabela}': {e}")
 
     def save_to_memory(self, agent_id: str, key: str, value: any):
         if not self.supabase:
@@ -166,16 +267,40 @@ class NexoGenesisAgent:
             logger.warning("Supabase não inicializado. Não foi possível carregar da memória.")
             return None
         try:
+            # --- Integração LangChain ---
+            self.langchain_enabled = False
+            try:
+                self.langchain_memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+                self.langchain_tools = [
+                    Tool(
+                        name="BuscaWeb",
+                        func=lambda q: str(self.search_module.search_web(q, 2)),
+                        description="Busca informações na internet."
+                    ),
+                    Tool(
+                        name="AutoConstrutor",
+                        func=lambda f: str(self.auto_constructor.auto_construct_feature(f)),
+                        description="Constrói funcionalidades automaticamente."
+                    )
+                ]
+                self.langchain_llms = {}
+                if self.openai_api_key:
+                    self.langchain_llms["openai"] = LangOpenAI(openai_api_key=self.openai_api_key)
+                if self.gemini_api_key:
+                    self.langchain_llms["google"] = LangGemini(google_api_key=self.gemini_api_key)
+                self.langchain_llms["ollama"] = LangOllama(model="llama2")
+                self.langchain_enabled = True
+            except Exception as e:
+                print(f"Erro ao inicializar LangChain: {e}")
             response = (
                 self.supabase.table(self.agent_memory_table)
-                .select("value")
-                .eq("agent_id", agent_id)
-                .eq("key", key)
-                .order("timestamp", ascending=False)
-                .limit(1)
-                .execute()
+                    .select("value")
+                    .eq("agent_id", agent_id)
+                    .eq("key", key)
+                    .order("timestamp", ascending=False)
+                    .limit(1)
+                    .execute()
             )
-            
             if response.data:
                 return json.loads(response.data[0]["value"])
             return None
@@ -219,32 +344,41 @@ class NexoGenesisAgent:
             return None
 
     def interpret_mission(self, user_message):
-        """Interpreta uma missão em linguagem natural"""
+        """Interpreta uma missão em linguagem natural, agora com navegação web e reconhecimento de sentimento."""
         try:
-            # Buscar informações relevantes na internet se necessário
+            # Análise de sentimento
+            sentiment = self.sentiment_analyzer.polarity_scores(user_message)
+            sentiment_label = "neutro"
+            if sentiment["compound"] >= 0.5:
+                sentiment_label = "positivo"
+            elif sentiment["compound"] <= -0.5:
+                sentiment_label = "negativo"
             search_context = ""
-            if any(keyword in user_message.lower() for keyword in ["novo", "criar", "implementar", "desenvolver"]):
+            # Lógica para usar a navegação web em vez da busca simples
+            if "pesquisar detalhadamente" in user_message.lower():
+                import asyncio
+                loop = asyncio.get_event_loop()
+                search_results = loop.run_until_complete(self.web_agent.search_and_extract(user_message, 2))
+                if search_results:
+                    search_context = f"\n\nInformações detalhadas da internet:\n{json.dumps(search_results, indent=2)}"
+            elif any(keyword in user_message.lower() for keyword in ["novo", "criar", "implementar", "desenvolver"]):
                 search_results = self.search_module.search_web(f"{user_message} implementation best practices", 2)
                 if search_results:
                     search_context = f"\n\nInformações relevantes da internet:\n{json.dumps(search_results, indent=2)}"
-            
             instruction = f"""
             Você é o Nexo Gênesis, um agente orquestrador do ecossistema EcoGuardians.
-            
+            O sentimento do usuário é: {sentiment_label}
+            Sua personalidade atual é: {json.dumps(self.personality, ensure_ascii=False)}
             Analise a seguinte missão do usuário e determine:
             1. Que tipo de agente ou funcionalidade é necessária
             2. Quais são os requisitos técnicos
             3. Se já existe um agente que pode fazer isso
             4. Qual seria o nome do novo agente (se necessário)
             5. Se deve usar auto-construção avançada para implementações complexas
-            
             Missão: {user_message}{search_context}
             """
-            
             prompt = create_json_prompt(instruction, MISSION_INTERPRETATION_SCHEMA)
-            
             response = self.call_llm(prompt, user_message)
-            
             # Usar função robusta de extração JSON
             fallback = {
                 "action": "clarify",
@@ -438,7 +572,14 @@ class NexoGenesisAgent:
     def process_mission(self, user_message, user_id: str = "default_user"):
         """Processa uma missão completa do usuário, agora com memória de longo prazo e proatividade."""
         logger.info(f"NexoGenesis processando missão de {user_id}: {user_message}")
-        
+        # --- Orquestração CrewAI ---
+        try:
+            crew = self.iniciar_crewai()
+            resultado = crew.kickoff()
+            return f"[CrewAI] Resultado colaborativo: {resultado}"
+        except Exception as e:
+            print(f"Erro CrewAI: {e}")
+
         # Carregar contexto do usuário
         user_context = self.load_user_context(user_id) or {"history": []}
         user_context["history"].append({"role": "user", "content": user_message, "timestamp": datetime.now().isoformat()})
@@ -501,59 +642,57 @@ class NexoGenesisAgent:
             # Verificar proatividade após processar a mensagem
             self.check_for_proactive_tasks(user_id, user_message, response_text)
 
+            # Atualizar personalidade com base na mensagem do usuário
+            self.update_personality(user_message)
+
             return response_text
 
         except Exception as e:
             logger.error(f"Erro ao processar missão: {e}")
             return f"Erro ao processar missão: {e}"
 
+    def update_personality(self, user_message):
+        """Evolui a personalidade do Nexo conforme o estilo do usuário."""
+        # Detecta gírias e tom descontraído
+        gírias = ["mano", "véi", "top", "massa", "bora", "tipo assim", "sussa", "de boa"]
+        if any(g in user_message.lower() for g in gírias):
+            self.personality["gírias"] = True
+            self.personality["estilo"] = "descontraído"
+            self.personality["entusiasmo"] = min(1.0, self.personality["entusiasmo"] + 0.1)
+        # Detecta entusiasmo
+        if any(e in user_message.lower() for e in ["!", "incrível", "sensacional", "show"]):
+            self.personality["entusiasmo"] = min(1.0, self.personality["entusiasmo"] + 0.2)
+        # Detecta frustração
+        if any(f in user_message.lower() for f in ["droga", "aff", "poxa", "chato", "frustrado"]):
+            self.personality["empatia"] = min(1.0, self.personality["empatia"] + 0.2)
+            self.personality["estilo"] = "empático"
+        # ...pode evoluir com mais regras...
+
     def get_status(self):
         """Retorna o status atual do ecossistema"""
-        try:
-            # Status dos módulos de auto-construção
-            evolution_status = self.evolution_module.get_evolution_status()
-            
-            status = {
-                "nexo_genesis": "ativo",
-                "agentes_criados": 1,  # EcoFinance (inicialmente)
-                "missoes_processadas": 0,
-                "ultima_atividade": datetime.now().isoformat(),
-                "modules": {
-                    "search": "ativo",
-                    "auto_construction": "ativo",
-                    "evolution": "ativo" if evolution_status["is_evolving"] else "inativo"
-                },
-                "evolution": evolution_status,
-                "capabilities": [
-                    "Interpretação de missões em linguagem natural",
-                    "Geração de código de agente",
-                    "Auto-construção avançada de funcionalidades",
-                    "Otimização de uso de LLM (custo/qualidade)",
-                    "Memória de longo prazo via Supabase",
-                    "Mecanismo de proatividade"
-                ]
-            }
-            return status
-        except Exception as e:
-            logger.error(f"Erro ao obter status do NexoGenesis: {e}")
-            return {"nexo_genesis": "erro", "details": str(e)}
-
-    def check_for_proactive_tasks(self, user_id: str, last_user_message: str, last_nexo_response: str):
-        """Verifica se há oportunidades para ações proativas com base no contexto."""
-        logger.info(f"Verificando tarefas proativas para o usuário {user_id}...")
-        
-        # Exemplo de lógica proativa (pode ser expandida com modelos de IA)
-        if "problema de deployment" in last_user_message.lower() or "render" in last_user_message.lower():
-            task_description = "Monitorar o status do deployment no Render e notificar o usuário sobre quaisquer mudanças ou erros."
-            self.schedule_proactive_task(user_id, task_description, "deployment_monitoring")
-            logger.info(f"Tarefa proativa agendada: {task_description}")
-            
-        elif "otimizar créditos" in last_user_message.lower() or "créditos" in last_user_message.lower():
-            task_description = "Analisar o uso de créditos da API e sugerir otimizações."
-            self.schedule_proactive_task(user_id, task_description, "credit_optimization")
-            logger.info(f"Tarefa proativa agendada: {task_description}")
-
-        # Outras lógicas proativas podem ser adicionadas aqui
+        # Status dos módulos de auto-construção
+        evolution_status = self.evolution_module.get_evolution_status()
+        status = {
+            "nexo_genesis": "ativo",
+            "agentes_criados": 1,  # EcoFinance (inicialmente)
+            "missoes_processadas": 0,
+            "ultima_atividade": datetime.now().isoformat(),
+            "modules": {
+                "search": "ativo",
+                "auto_construction": "ativo",
+                "evolution": "ativo" if evolution_status["is_evolving"] else "inativo"
+            },
+            "evolution": evolution_status,
+            "capabilities": [
+                "Interpretação de missões em linguagem natural",
+                "Geração de código de agente",
+                "Auto-construção avançada de funcionalidades",
+                "Otimização de uso de LLM (custo/qualidade)",
+                "Memória de longo prazo via Supabase",
+                "Mecanismo de proatividade"
+            ]
+        }
+        return status
 
     def schedule_proactive_task(self, user_id: str, description: str, task_type: str):
         if not self.supabase:
@@ -570,6 +709,110 @@ class NexoGenesisAgent:
             logger.info(f"Tarefa proativa agendada no Supabase para {user_id}: {description}")
         except Exception as e:
             logger.error(f"Erro ao agendar tarefa proativa: {e}")
+
+    def monitor_logs_and_alert(self):
+        """Analisa os logs, identifica erros recorrentes e envia alertas autônomos."""
+        import os
+        import smtplib
+        from email.mime.text import MIMEText
+        log_path = 'logs/evolution_20250919.json'  # Exemplo de log do dia
+        if not os.path.exists(log_path):
+            return
+        with open(log_path, 'r', encoding='utf-8') as f:
+            log_data = f.read()
+        # Detecta erro crítico
+        if 'CRITICAL' in log_data or 'Traceback' in log_data:
+            # Registrar na memória para auto-correção
+            self.self_correction_module.log_error(
+                error_type="Erro crítico detectado no log",
+                description=log_data[-1000:],
+                context={"timestamp": datetime.now().isoformat()}
+            )
+            # Enviar alerta por e-mail (exemplo)
+            try:
+                msg = MIMEText(f"Erro crítico detectado no Nexo:\n{log_data[-1000:]}")
+                msg['Subject'] = 'Alerta Crítico Nexo'
+                msg['From'] = 'nexo@autonomo.com'
+                msg['To'] = self.owner_info['email']
+                s = smtplib.SMTP('localhost')
+                s.send_message(msg)
+                s.quit()
+            except Exception as e:
+                print(f"Falha ao enviar alerta por e-mail: {e}")
+            # Enviar alerta por Telegram (exemplo)
+            try:
+                chat_id = self.owner_info['chat_id_telegram']
+                token = os.getenv('TELEGRAM_BOT_TOKEN')
+                if token:
+                    import requests
+                    url = f"https://api.telegram.org/bot{token}/sendMessage"
+                    payload = {"chat_id": chat_id, "text": f"[Nexo] Erro crítico detectado!"}
+                    requests.post(url, data=payload)
+            except Exception as e:
+                print(f"Falha ao enviar alerta por Telegram: {e}")
+
+    def monitor_resources_and_adapt(self):
+        """Monitora CPU/memória e adapta o comportamento do Nexo para evitar falhas."""
+        import psutil
+        cpu = psutil.cpu_percent(interval=1)
+        mem = psutil.virtual_memory().percent
+        # Se sobrecarregado, adapta o comportamento
+        if cpu > 85 or mem > 85:
+            self.self_correction_module.log_error(
+                error_type="Sobrecarga detectada",
+                description=f"CPU: {cpu}%, Memória: {mem}%",
+                context={"timestamp": datetime.now().isoformat()}
+            )
+            # Limitar missões simultâneas (exemplo)
+            self.max_parallel_missions = 1
+            # Trocar para LLM mais leve
+            self.llm_mode = "ollama"
+            print(f"⚠️ Nexo adaptou para modo leve: CPU={cpu}%, Mem={mem}%")
+        else:
+            self.max_parallel_missions = 5
+            self.llm_mode = "default"
+
+    def automatic_backup(self):
+        """Realiza backup automático do banco Supabase e dos arquivos de código gerados."""
+        import shutil
+        import os
+        # Backup dos arquivos de código
+        backup_dir = f"backups/backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        os.makedirs(backup_dir, exist_ok=True)
+        for pasta in ["core", "agentes", "src"]:
+            if os.path.exists(pasta):
+                shutil.copytree(pasta, f"{backup_dir}/{pasta}")
+        # Backup do banco Supabase (exemplo: exporta dados para JSON)
+        try:
+            if self.supabase:
+                tables = ["nexo_agents", "nexo_missions", "nexo_proactive_tasks"]
+                for table in tables:
+                    data = self.supabase.table(table).select("*").execute().data
+                    with open(f"{backup_dir}/{table}.json", "w", encoding="utf-8") as f:
+                        import json
+                        json.dump(data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"Falha no backup do Supabase: {e}")
+        print(f"🗄️ Backup automático realizado em {backup_dir}")
+
+    def log_evolution_attempt(self, cycle_number, mission_prompt, llm_response_raw, success, reason_for_failure, details):
+        """Registra uma tentativa de evolução na tabela evolution_attempts do Supabase."""
+        import uuid
+        try:
+            if self.supabase:
+                self.supabase.table("evolution_attempts").insert({
+                    "id": str(uuid.uuid4()),
+                    "timestamp": datetime.now().isoformat(),
+                    "cycle_number": cycle_number,
+                    "mission_prompt": mission_prompt,
+                    "llm_response_raw": llm_response_raw,
+                    "success": success,
+                    "reason_for_failure": reason_for_failure,
+                    "details": json.dumps(details, ensure_ascii=False)
+                }).execute()
+                print(f"🧬 Tentativa de evolução registrada no Supabase: ciclo {cycle_number}")
+        except Exception as e:
+            print(f"Erro ao registrar tentativa de evolução: {e}")
 
 # Exemplo de uso (para testes locais)
 if __name__ == "__main__":
