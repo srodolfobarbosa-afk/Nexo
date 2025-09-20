@@ -13,3 +13,4 @@ wheel
 gunicorn
 Werkzeug
 playwright
+vaderSentiment
