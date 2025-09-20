@@ -13,6 +13,8 @@ class MarketWatcherEconomico:
     def __init__(self):
         self.supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
         self.data_sources = {'yfinance':yf} #Exemplo, adicionar outras APIs
+        from core.api_search import APISearch
+        self.api_search = APISearch()
 
     async def connect_to_database(self):
         try:

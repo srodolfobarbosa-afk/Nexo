@@ -14,6 +14,8 @@ class APIcreditOptimizer:
         except Exception as e:
             print(f"Erro ao conectar ao Supabase: {e}")
             raise
+        from core.api_search import APISearch
+        self.api_search = APISearch()
 
     def monitor_api_usage(self, api_key: str) -> Dict[str, Any]:
         try:

@@ -18,6 +18,8 @@ class MarketWatchAgent:
             print("Conectado ao Supabase.")
         except Exception as e:
             print(f"Erro ao conectar ao Supabase: {e}")
+        from core.api_search import APISearch
+        self.api_search = APISearch()
             exit(1)
 
     def fetch_stock_data(self, ticker: str) -> Dict[str, Any]:
