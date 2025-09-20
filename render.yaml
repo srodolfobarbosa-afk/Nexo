@@ -3,7 +3,7 @@ services:
     name: ecoguardians-nexo
     env: python
   buildCommand: pip install -r requirements.txt && mkdir -p src/static && cp -r app/static/* src/static/
-  startCommand: gunicorn --bind 0.0.0.0:$PORT src.main:app
+  startCommand: gunicorn --bind 0.0.0.0:$PORT src.ws_server:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
