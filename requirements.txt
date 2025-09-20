@@ -1,3 +1,4 @@
+flask-sock
 flask
 supabase
 requests
@@ -5,10 +6,9 @@ python-dotenv
 openai
 google-api-python-client
 pytest
-
-
+ollama
 setuptools
 wheel
 gunicorn
 Werkzeug
-
+flask-soc
