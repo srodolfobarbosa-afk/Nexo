@@ -12,3 +12,4 @@ setuptools
 wheel
 gunicorn
 Werkzeug
+playwright
