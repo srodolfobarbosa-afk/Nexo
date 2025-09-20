@@ -40,6 +40,40 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class NexoGenesisAgent:
+    """
+    Agente orquestrador do ecossistema EcoGuardians.
+    - Interpreta missões em linguagem natural
+    - Gera código de agentes
+    - Realiza auto-construção avançada
+    - Otimiza uso de LLMs (custo/qualidade)
+    - Gerencia memória de longo prazo via Supabase
+    - Executa tarefas proativas e automação
+    - Monitora recursos e realiza backup automático
+    """
+    @staticmethod
+    def validar_ambiente():
+        """
+        Valida se todas as dependências e variáveis de ambiente estão presentes.
+        """
+        import importlib
+        pacotes = [
+            "supabase", "dotenv", "vaderSentiment", "requests", "ollama", "google.generativeai",
+            "beautifulsoup4", "langchain", "psutil", "flask", "flask_sock"
+        ]
+        faltando = []
+        for pacote in pacotes:
+            try:
+                importlib.import_module(pacote.replace(".", ""))
+            except ImportError:
+                faltando.append(pacote)
+        envs = ["SUPABASE_URL", "SUPABASE_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY", "GROQ_API_KEY"]
+        env_faltando = [e for e in envs if not os.getenv(e)]
+        if faltando:
+            print(f"[AVISO] Pacotes faltando: {faltando}. Execute 'pip install -r requirements.txt'.")
+        if env_faltando:
+            print(f"[AVISO] Variáveis de ambiente faltando: {env_faltando}. Configure no .env ou render.yaml.")
+        if not faltando and not env_faltando:
+            print("[OK] Ambiente validado: todas dependências e variáveis presentes.")
     def __init__(self):
         # Informações do criador/dono do sistema
         self.owner_info = {
@@ -816,6 +850,7 @@ CREATE TABLE evolution_attempts (
 
 # Exemplo de uso (para testes locais)
 if __name__ == "__main__":
+    NexoGenesisAgent.validar_ambiente()
     # Certifique-se de que SUPABASE_URL e SUPABASE_KEY estão no seu .env
     # e que as tabelas existem ou serão criadas automaticamente pelo Supabase
     nexo_genesis = NexoGenesisAgent() # Alterado para NexoGenesisAgent

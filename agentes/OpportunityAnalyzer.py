@@ -13,6 +13,8 @@ class OpportunityAnalyzer(Agent):
         super().__init__()
         self.supabase = supabase or get_supabase_client()
         self.requirements = ['Acesso à base de dados do Nexo', 'Integração com APIs de mercado e tendências', 'Capacidade de análise de dados e previsão', 'Interface de usuário para visualização de resultados', 'Mecanismo de geração de relatórios']
+        from core.api_search import APISearch
+        self.api_search = APISearch()
 
 
     def analyze_market_trends(self, keywords: List[str]) -> Dict[str, Any]:

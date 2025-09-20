@@ -1,6 +1,8 @@
 class Analyzer:
     def __init__(self):
         self.name = 'Analyzer'
+        from core.api_search import APISearch
+        self.api_search = APISearch()
 
     def falar(self, problema):
         response = self.llm_correction_plan(problema)

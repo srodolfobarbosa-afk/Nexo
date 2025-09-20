@@ -24,11 +24,26 @@ jobs:
           source venv/bin/activate
           pip install -r requirements.txt
 
+      - name: Install flake8
+        run: |
+          source venv/bin/activate
+          pip install flake8
+
+      - name: Run lint
+        run: |
+          source venv/bin/activate
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
       - name: Run tests
         run: |
           source venv/bin/activate
           pytest tests/
 
       - name: Deploy to Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
-          echo "🚀 Aqui você pode integrar o comando do Render CLI ou API de deploy"
+          pip install render-cli
+          source venv/bin/activate
+          render deploy --service srv-d33s9djuibrs73asirgg --api-key $RENDER_API_KEY

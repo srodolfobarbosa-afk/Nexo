@@ -7,7 +7,9 @@ import pandas as pd
 
 
 class OportunidadesNexo:
-    def __init__(self, supabase_url: str = None, supabase_key: str = None):
+  def __init__(self, supabase_url: str = None, supabase_key: str = None):
+    from core.api_search import APISearch
+    self.api_search = APISearch()
         if supabase_url is None:
             supabase_url = os.environ.get("SUPABASE_URL")
         if supabase_key is None:

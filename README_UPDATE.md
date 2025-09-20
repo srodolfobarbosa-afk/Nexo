@@ -23,33 +23,41 @@ CREATE TABLE evolution_attempts (
 	details TEXT
 );
 ```
-# Atualização do Projeto Nexo
 
-## Passo 1: Configurar o ambiente
-Copie o arquivo `.env.example` para `.env` e preencha suas chaves reais.
+# EcoGuardians - Centro de Comando de Agentes de IA
 
-```bash
-cp .env.example .env
-nano .env
-```
+## Funcionalidades
 
-## Passo 2: Instalar dependências
-```bash
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
+- **Monitor visual dividido em 3 partes:** exibe resultados dos agentes em tempo real (imagens, gráficos, status, etc).
+- **Status dos agentes:** cartões com nome, status, CPU/RAM, tarefas/hora e ações rápidas.
+- **Dashboard financeiro:** gráficos dinâmicos de receita, despesa e ROI.
+- **Histórico de falhas e sucessos:** filtragem avançada por nível, agente e tipo, destaques visuais e download de logs.
+- **Mapa de orquestração de tarefas:** visualização do fluxo de trabalho dos agentes.
+- **Gerenciamento de API Keys:** adicionar, revogar e visualizar chaves diretamente pelo painel.
 
-## Passo 3: Rodar localmente
-```bash
-bash start.sh
-```
+## Como rodar localmente
 
-## Passo 4: Testar
-```bash
-pytest tests/
-```
+1. Instale as dependências:
+	```bash
+	pip install flask flask-sock psutil
+	```
+2. Execute o backend WebSocket:
+	```bash
+	python3 src/ws_server.py
+	```
+3. Acesse a interface em [http://localhost:8000](http://localhost:8000)
 
-## Passo 5: Deploy Automático
-- O GitHub Actions (`.github/workflows/auto-deploy.yml`) já está configurado.
-- A cada `git push` na branch `main`, os testes serão executados e o deploy preparado.
+## CI/CD
+- O projeto possui workflow automatizado para lint, testes e deploy no Render.
+- Todas as mudanças são versionadas e documentadas.
+
+## Estrutura recomendada
+- `app/static/index.html` — Interface principal
+- `app/static/script.js` — Lógica dinâmica do frontend
+- `src/ws_server.py` — Backend WebSocket
+- `.env` — Chaves de API e configurações
+
+## Observações
+- O painel é proativo: qualquer agente pode enviar visualizações para o monitor.
+- Logs, status, financeiro e tarefas são atualizados em tempo real.
+- API Keys são gerenciadas de forma segura e flexível.

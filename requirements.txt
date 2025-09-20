@@ -1,3 +1,5 @@
+psutil
+flask-sock
 flask
 gunicorn
 requests
@@ -8,9 +10,13 @@ groq
 python-dotenv
 google-api-python-client
 pytest
+ollama
 setuptools
 wheel
 Werkzeug
 vaderSentiment
 pyTelegramBotAPI
+playwright
+beautifulsoup4
+langchain
 

@@ -8,6 +8,8 @@ class EcoFinanceAgent:
     def __init__(self):
         self.supabase = get_supabase_client()
         print("EcoFinanceAgent inicializado e conectado ao Supabase.")
+        from core.api_search import APISearch
+        self.api_search = APISearch()
 
     def run(self):
         print("EcoFinanceAgent está em execução...")
