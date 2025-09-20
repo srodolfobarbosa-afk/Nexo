@@ -22,22 +22,34 @@ class ManusIntegration:
     def __init__(self):
         self.api_url = MANUS_API_URL
         self.api_key = MANUS_API_KEY
+        self.api_available = False  # API ainda não está publicamente disponível
         
-        # Verificação da chave da API para evitar erros
         if not self.api_key:
-            logger.error("A chave da API Manus não foi encontrada. Verifique a variável de ambiente 'MANUS_API_KEY'.")
-            raise ValueError("Chave da API não configurada.")
-            
-        self.session = requests.Session()
-        
-        # Configurar headers padrão
-        self.session.headers.update({
-            'Authorization': f'Bearer {self.api_key}',
-            'Content-Type': 'application/json'
-        })
+            logger.info("API do Manus ainda não está publicamente disponível. Aguardando lançamento oficial.")
+        else:
+            self.session = requests.Session()
+            # Configurar headers padrão
+            self.session.headers.update({
+                'Authorization': f'Bearer {self.api_key}',
+                'Content-Type': 'application/json'
+            })
+            self.api_available = True
     
     def create_task(self, message: str, context: List[Dict] = None) -> Dict:
         """Criar uma tarefa no Manus para processar a mensagem"""
+        if not self.api_available:
+            logger.info("API do Manus ainda não está publicamente disponível. Aguardando lançamento oficial.")
+            return {
+                "status": "pending_api_launch",
+                "message": "Integração com Manus será ativada quando a API oficial for lançada publicamente.",
+                "api_status": "Aguardando lançamento - Currently in private beta",
+                "expected_phases": [
+                    "Phase 2: Early Access (Coming soon)",
+                    "Phase 3: Public Release (Full access)"
+                ],
+                "timestamp": datetime.now().isoformat()
+            }
+        
         try:
             # Preparar payload para criação de tarefa
             task_data = {
@@ -68,6 +80,13 @@ class ManusIntegration:
     
     def get_task_status(self, task_id: str) -> Dict:
         """Verificar status de uma tarefa"""
+        if not self.api_available:
+            return {
+                "task_id": task_id,
+                "status": "pending_api_launch",
+                "message": "API do Manus ainda não está disponível publicamente"
+            }
+            
         try:
             # Implementar chamada real para verificar o status
             response = self.session.get(f"{self.api_url}/tasks/{task_id}")
