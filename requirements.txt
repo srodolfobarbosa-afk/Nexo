@@ -5,3 +5,10 @@ python-dotenv
 openai
 google-api-python-client
 pytest
+
+
+setuptools
+wheel
+gunicorn
+Werkzeug
+
