@@ -29,7 +29,24 @@ def ws(ws):
     eco = EcoFinanceAgent()
     api_opt = APIcreditOptimizer()
     supabase = get_supabase_client()
+    api_keys = [k for k in os.environ.keys() if 'KEY' in k]
+    # API Keys gerenciadas em memória (mock)
+    api_keys_mem = api_keys.copy()
     while True:
+        # Recebe comandos do frontend
+        if ws.ready_state == 1:
+            try:
+                msg = ws.receive(timeout=0.1)
+                if msg:
+                    data = json.loads(msg)
+                    if data.get('action') == 'adicionar_api_key':
+                        api_keys_mem.append(data['key'])
+                    if data.get('action') == 'remover_api_key':
+                        idx = data['index']
+                        if 0 <= idx < len(api_keys_mem):
+                            api_keys_mem.pop(idx)
+            except Exception:
+                pass
         # Monitor visual dividido em 3 partes
         monitor_htmls = [
             f"<div><strong>Status NexoGenesis:</strong> {nexo.get_status()['nexo_genesis']}</div>",
@@ -56,19 +73,26 @@ def ws(ws):
             "type": "financeiro",
             "graficos": financeiro_html
         }))
-        # Histórico de falhas (exemplo: leitura de logs)
-        falhas = []
+        # Histórico de falhas detalhado para filtragem
+        logs = []
         try:
             with open('../logs/evolution_20250919.json') as f:
                 for line in f:
                     if 'failed' in line:
-                        falhas.append(line)
+                        logs.append({
+                            "nivel": "error",
+                            "agente": "NexoGenesis",
+                            "mensagem": line.strip(),
+                            "timestamp": datetime.now().isoformat()
+                        })
         except Exception:
             pass
-        historico_html = f"<span style='color:red'>{len(falhas)} falhas críticas</span>, <span style='color:green'>98% sucesso</span>"
+        # Exemplo de log info/warning
+        logs.append({"nivel": "info", "agente": "EcoFinance", "mensagem": "Operação financeira concluída.", "timestamp": datetime.now().isoformat()})
+        logs.append({"nivel": "warning", "agente": "APIcreditOptimizer", "mensagem": "Limite de requisições próximo do máximo.", "timestamp": datetime.now().isoformat()})
         ws.send(json.dumps({
             "type": "historico",
-            "historico": historico_html
+            "logs": logs
         }))
         # Mapa de tarefas (exemplo: ciclo de evolução)
         try:
@@ -82,11 +106,11 @@ def ws(ws):
             "mapa": mapa_html
         }))
         # Configurações (API Keys)
-        api_keys = [k for k in os.environ.keys() if 'KEY' in k]
-        config_html = f"<strong>API Keys:</strong> {len(api_keys)} cadastradas. <button>Gerenciar</button>"
+        config_html = f"<strong>API Keys:</strong> {len(api_keys_mem)} cadastradas. <button>Gerenciar</button>"
         ws.send(json.dumps({
             "type": "config",
-            "config": config_html
+            "config": config_html,
+            "api_keys": api_keys_mem
         }))
         time.sleep(2)
 
