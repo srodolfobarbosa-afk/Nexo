@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Log dos Agentes - Nexo</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f7f7f7; }
+        h1 { color: #2c3e50; }
+        .log-container { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #ccc; padding: 24px; margin: 32px auto; max-width: 900px; }
+        .log-entry { border-bottom: 1px solid #eee; padding: 12px 0; }
+        .log-entry:last-child { border-bottom: none; }
+        .log-title { font-weight: bold; color: #2980b9; }
+        .log-meta { color: #888; font-size: 0.95em; }
+        .log-desc { margin-top: 6px; }
+    </style>
+</head>
+<body>
+    <div class="log-container">
+        <h1>Log dos Agentes - Nexo</h1>
+        <div id="log-list">
+            Carregando registros...
+        </div>
+    </div>
+    <script>
+        async function carregarLog() {
+            const res = await fetch('/agentes-log');
+            const data = await res.json();
+            const container = document.getElementById('log-list');
+            if (!data.length) {
+                container.innerHTML = '<p>Nenhum registro encontrado.</p>';
+                return;
+            }
+            container.innerHTML = data.map(entry => `
+                <div class="log-entry">
+                    <div class="log-title">${entry.agente || entry.nome || 'Agente'} - ${entry.acao || entry.tipo || 'Ação'}</div>
+                    <div class="log-meta">Ciclo: ${entry.ciclo || '-'} | Data: ${entry.data || '-'}</div>
+                    <div class="log-desc">${entry.descricao || entry.mensagem || entry.resultado || JSON.stringify(entry)}</div>
+                </div>
+            `).join('');
+        }
+        carregarLog();
+    </script>
+</body>
+</html>

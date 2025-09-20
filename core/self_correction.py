@@ -76,18 +76,22 @@ class SelfCorrectionModule:
         try:
             # Simples recuperação. Em um sistema real, usaria embeddings para busca semântica.
             if query:
-                response = self.supabase.table(self.learning_memory_table)\
-                    .select("lesson, action_taken, effectiveness, context")\
-                    .ilike("lesson", f"%{query}%")\
-                    .order("timestamp", ascending=False)\
-                    .limit(limit)\
+                response = (
+                    self.supabase.table(self.learning_memory_table)
+                    .select("lesson, action_taken, effectiveness, context")
+                    .ilike("lesson", f"%{query}%")
+                    .order("timestamp", ascending=False)
+                    .limit(limit)
                     .execute()
+                )
             else:
-                response = self.supabase.table(self.learning_memory_table)\
-                    .select("lesson, action_taken, effectiveness, context")\
-                    .order("timestamp", ascending=False)\
-                    .limit(limit)\
+                response = (
+                    self.supabase.table(self.learning_memory_table)
+                    .select("lesson, action_taken, effectiveness, context")
+                    .order("timestamp", ascending=False)
+                    .limit(limit)
                     .execute()
+                )
             
             return response.data
         except Exception as e:
@@ -131,10 +135,10 @@ if __name__ == "__main__":
     lessons = correction_module.retrieve_learning_lessons()
     print("\n--- Lições Aprendidas ---")
     for lesson in lessons:
-        print(f"Lição: {lesson['lesson']}\nAção: {lesson['action_taken']}\nEficácia: {lesson['effectiveness']}\n")
+        print(f"Lição: {lesson["lesson"]}\nAção: {lesson["action_taken"]}\nEficácia: {lesson["effectiveness"]}\n")
 
     lessons_about_context = correction_module.retrieve_learning_lessons(query="contexto")
     print("\n--- Lições sobre Contexto ---")
     for lesson in lessons_about_context:
-        print(f"Lição: {lesson['lesson']}\nAção: {lesson['action_taken']}\nEficácia: {lesson['effectiveness']}\n")
+        print(f"Lição: {lesson["lesson"]}\nAção: {lesson["action_taken"]}\nEficácia: {lesson["effectiveness"]}\n")
 

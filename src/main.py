@@ -1,4 +1,7 @@
+
 from flask import Flask, jsonify, send_from_directory
+import sys
+
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 
 @app.route("/")
@@ -17,4 +20,10 @@ def status():
     })
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    if len(sys.argv) > 1 and sys.argv[1] == "auto-evolution":
+        import sys
+        sys.path.append("..")
+        from auto_evolution_loop import auto_evolution_loop
+        auto_evolution_loop()
+    else:
+        app.run(host="0.0.0.0", port=5000)
