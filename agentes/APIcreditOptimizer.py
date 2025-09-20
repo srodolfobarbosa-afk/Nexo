@@ -85,4 +85,4 @@ class APIcreditOptimizer:
             print(f"Erro ao exibir o relatório: {e}")
 
 
-```
+
