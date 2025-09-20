@@ -2,7 +2,7 @@
 from flask import Flask, jsonify, send_from_directory
 import sys
 
-app = Flask(__name__, static_folder="static", static_url_path="/static")
+app = Flask(__name__, static_folder="../app/static", static_url_path="/static")
 
 @app.route("/")
 def home():

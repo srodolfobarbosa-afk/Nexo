@@ -2,9 +2,61 @@
 <html lang="pt-BR">
 <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>EcoGuardians</title></head>
 <body style="font-family:Arial,Helvetica,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;">
-  <div style="text-align:center">
-    <h1>EcoGuardians está rodando 🚀</h1>
-    <p>Endpoint de status: <code>/status</code></p>
+  <div id="dashboard" style="width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:#f4f6fb;">
+    <header style="width:100%;background:linear-gradient(90deg,#667eea,#764ba2);color:white;padding:24px 0;text-align:center;">
+      <h1>Centro de Comando EcoGuardians 🚀</h1>
+      <p>Monitoramento e Controle dos Agentes de IA</p>
+    </header>
+    <main style="width:90%;max-width:1200px;display:grid;grid-template-columns:2fr 1fr;grid-gap:32px;margin-top:32px;">
+      <section id="agente-monitor" style="background:white;border-radius:16px;box-shadow:0 4px 16px #0001;padding:24px;min-height:300px;">
+        <h2>Monitor de Renderização dos Agentes</h2>
+        <div id="monitor-tela" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;min-height:220px;">
+          <div id="monitor-content-1" style="background:#f8f9fa;border-radius:8px;min-height:200px;padding:8px;text-align:center;">Parte 1</div>
+          <div id="monitor-content-2" style="background:#f8f9fa;border-radius:8px;min-height:200px;padding:8px;text-align:center;">Parte 2</div>
+          <div id="monitor-content-3" style="background:#f8f9fa;border-radius:8px;min-height:200px;padding:8px;text-align:center;">Parte 3</div>
+        </div>
+      </section>
+      <aside style="display:flex;flex-direction:column;gap:24px;">
+        <section id="agentes-status" style="background:white;border-radius:16px;box-shadow:0 4px 16px #0001;padding:16px;">
+          <h2>Status dos Agentes</h2>
+          <div id="agentes-cards" style="display:flex;flex-wrap:wrap;gap:12px;"></div>
+        </section>
+        <section id="dashboard-financeiro" style="background:white;border-radius:16px;box-shadow:0 4px 16px #0001;padding:16px;">
+          <h2>Dashboard Financeiro</h2>
+          <div id="financeiro-graficos">Gráficos de receita, despesa e ROI aparecerão aqui.</div>
+        </section>
+      </aside>
+    </main>
+    <section id="historico-falhas" style="width:90%;max-width:1200px;background:white;border-radius:16px;box-shadow:0 4px 16px #0001;padding:24px;margin:32px 0;">
+      <h2>Histórico de Falhas e Sucessos</h2>
+      <div style="margin-bottom:16px;display:flex;gap:16px;align-items:center;">
+        <label for="filtro-nivel">Filtrar por nível:</label>
+        <select id="filtro-nivel">
+          <option value="all">Todos</option>
+          <option value="info">Info</option>
+          <option value="warning">Warning</option>
+          <option value="error">Error</option>
+        </select>
+        <label for="filtro-agente">Agente:</label>
+        <select id="filtro-agente">
+          <option value="all">Todos</option>
+          <option value="NexoGenesis">NexoGenesis</option>
+          <option value="EcoFinance">EcoFinance</option>
+          <option value="APIcreditOptimizer">APIcreditOptimizer</option>
+        </select>
+        <button id="download-logs" style="margin-left:auto;padding:8px 16px;border-radius:8px;background:#667eea;color:white;border:none;cursor:pointer;">Baixar Logs</button>
+      </div>
+      <div id="historico-content">Resumo estatístico e causas de falhas aparecerão aqui.</div>
+    </section>
+    <section id="mapa-tarefas" style="width:90%;max-width:1200px;background:white;border-radius:16px;box-shadow:0 4px 16px #0001;padding:24px;margin-bottom:32px;">
+      <h2>Mapa de Orquestração de Tarefas</h2>
+      <div id="mapa-content">Fluxo de trabalho dos agentes será exibido aqui.</div>
+    </section>
+    <section id="configuracoes" style="width:90%;max-width:1200px;background:white;border-radius:16px;box-shadow:0 4px 16px #0001;padding:24px;margin-bottom:32px;">
+      <h2>Configurações e Gerenciamento</h2>
+      <div id="config-content">Definição de metas e gerenciamento de API Keys.</div>
+    </section>
   </div>
 </body>
 </html>
+<script src="/static/script.js"></script>
