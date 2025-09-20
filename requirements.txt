@@ -15,3 +15,4 @@ Werkzeug
 playwright
 vaderSentiment
 beautifulsoup4
+langchain
