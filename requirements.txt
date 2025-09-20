@@ -14,4 +14,4 @@ gunicorn
 Werkzeug
 playwright
 vaderSentiment
-bs4
+beautifulsoup4
