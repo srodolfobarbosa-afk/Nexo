@@ -11,4 +11,3 @@ setuptools
 wheel
 gunicorn
 Werkzeug
-flask-soc
