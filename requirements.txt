@@ -20,3 +20,6 @@ playwright
 beautifulsoup4
 langchain
 
+
+chromadb
+
