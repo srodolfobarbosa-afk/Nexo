@@ -18,7 +18,7 @@ from core.json_utils import extract_json, safe_json_response, create_json_prompt
 import ollama
 import google.generativeai as genai
 import re
-print(f"DEBUG: Chave da API do Gemini: {os.getenv("GOOGLE_API_KEY")}")
+print(f'DEBUG: Chave da API do Gemini: {os.getenv("GOOGLE_API_KEY")}')
 
 from typing import Optional
 gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -97,7 +97,7 @@ class NexoGenesisAgent:
         self.llm_provider = os.environ.get("NEXO_LLM_PROVIDER", "google")
 
         # Inicializar módulos de auto-construção, automação web e memória vetorial
-        from core.vector_memory import VectorMemory
+from core.vector_memory import VectorMemory
         self.vector_memory = VectorMemory()
         self.auto_constructor = AutoConstructionModule(self.call_llm)
         self.evolution_module = EvolutionModule(self)
@@ -163,7 +163,7 @@ CREATE TABLE evolution_attempts (
         doc_id = self.vector_memory.salvar_ideia(texto, metadados)
         print(f"✅ Ideia registrada na memória vetorial: {doc_id}")
         return doc_id
-
+#
     def buscar_ideias_semelhantes(self, consulta, k=3):
         """
         Busca ideias/interações semelhantes por similaridade semântica.
