@@ -97,7 +97,7 @@ class NexoGenesisAgent:
         self.llm_provider = os.environ.get("NEXO_LLM_PROVIDER", "google")
 
         # Inicializar módulos de auto-construção, automação web e memória vetorial
-from core.vector_memory import VectorMemory
+        from core.vector_memory import VectorMemory
         self.vector_memory = VectorMemory()
         self.auto_constructor = AutoConstructionModule(self.call_llm)
         self.evolution_module = EvolutionModule(self)
