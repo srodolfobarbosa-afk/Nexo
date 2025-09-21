@@ -34,19 +34,22 @@ def ws(ws):
     api_keys_mem = api_keys.copy()
     while True:
         # Recebe comandos do frontend
-        if ws.ready_state == 1:
-            try:
-                msg = ws.receive(timeout=0.1)
-                if msg:
-                    data = json.loads(msg)
-                    if data.get('action') == 'adicionar_api_key':
-                        api_keys_mem.append(data['key'])
-                    if data.get('action') == 'remover_api_key':
-                        idx = data['index']
-                        if 0 <= idx < len(api_keys_mem):
-                            api_keys_mem.pop(idx)
-            except Exception:
-                pass
+        try:
+            msg = ws.receive(timeout=0.1)
+            if msg:
+                data = json.loads(msg)
+                if data.get("action") == "adicionar_api_key":
+                    api_keys_mem.append(data["key"])
+                if data.get("action") == "remover_api_key":
+                    idx = data["index"]
+                    if 0 <= idx < len(api_keys_mem):
+                        api_keys_mem.pop(idx)
+        except Exception as e:
+            # Tratar exceções de desconexão ou timeout
+            # Se o cliente se desconectar, ws.receive() pode levantar uma exceção
+            # ou retornar None/vazio dependendo da implementação do flask_sock
+            # Para simplicidade, vamos apenas passar, mas em produção, você pode querer logar ou quebrar o loop
+            pass
         # Monitor visual dividido em 3 partes
         monitor_htmls = [
             f"<div><strong>Status NexoGenesis:</strong> {nexo.get_status()['nexo_genesis']}</div>",
