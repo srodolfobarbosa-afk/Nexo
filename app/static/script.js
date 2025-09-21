@@ -1,9 +1,7 @@
 // script.js - Centro de Comando EcoGuardians
 
 // WebSocket para receber dados dos agentes
-const ws = new WebSocket('ws://localhost:8000/ws');
-
-ws.onmessage = function(event) {
+const ws = new WebSocket(`wss://${window.location.host}/ws`);ws.onmessage = function(event) {
     const data = JSON.parse(event.data);
     if (data.type === 'monitor') {
         // Suporta até 3 partes visuais
