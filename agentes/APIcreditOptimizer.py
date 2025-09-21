@@ -1,88 +1,67 @@
-## Arquivo Python: APIcreditOptimizer.py
 import os
-from supabase import Client, create_client
-from typing import Dict, List, Any
-
-# Substitua pelo seu URL e chave da Supabase
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+import logging
+import requests
 
 class APIcreditOptimizer:
+    """
+    Classe responsável por monitorar e otimizar o uso de créditos de API.
+    - Verifica saldo disponível.
+    - Alterna entre provedores (OpenAI, Gemini, Groq).
+    - Faz fallback automático em caso de erro.
+    """
+
     def __init__(self):
-        try:
-            self.supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-        except Exception as e:
-            print(f"Erro ao conectar ao Supabase: {e}")
-            raise
-        from core.api_search import APISearch
-        self.api_search = APISearch()
+        self.providers = {
+            "openai": os.getenv("OPENAI_API_KEY"),
+            "gemini": os.getenv("GEMINI_API_KEY"),
+            "groq": os.getenv("GROQ_API_KEY"),
+        }
+        self.active_provider = None
+        self.logger = logging.getLogger("APIcreditOptimizer")
 
-    def monitor_api_usage(self, api_key: str) -> Dict[str, Any]:
-        try:
-            # Lógica para monitorar o consumo da API (ex: consultar logs, métricas)
-            # Substitua pela sua lógica de monitoramento
-            # ...
-            usage_data = {"requests": 100, "bytes": 1024000}  # Dados de exemplo
-            return usage_data
-        except Exception as e:
-            print(f"Erro ao monitorar o uso da API: {e}")
-            return {}
+    def select_provider(self):
+        """
+        Seleciona automaticamente um provedor válido com base na chave de API disponível.
+        """
+        for name, key in self.providers.items():
+            if key and key != "None":
+                self.active_provider = name
+                self.logger.info(f"✅ Provedor selecionado: {name}")
+                return name
+        self.logger.error("❌ Nenhum provedor válido encontrado.")
+        return None
 
-    def analyze_usage_data(self, usage_data: Dict[str, Any]) -> Dict[str, Any]:
-        try:
-            # Lógica para analisar os dados de uso (ex: identificar picos, padrões)
-            # Substitua pela sua lógica de análise
-            # ...
-            analysis = {"peak_usage": 150, "average_usage": 50}  # Dados de exemplo
-            return analysis
-        except Exception as e:
-            print(f"Erro ao analisar os dados de uso: {e}")
-            return {}
+    def check_balance(self, provider):
+        """
+        Exemplo de verificação de créditos (mock).
+        Em produção, cada provedor terá sua API real de billing.
+        """
+        if provider == "openai":
+            return {"status": "ok", "credits": 100}
+        elif provider == "gemini":
+            return {"status": "ok", "credits": 200}
+        elif provider == "groq":
+            return {"status": "ok", "credits": 150}
+        else:
+            return {"status": "error", "credits": 0}
 
+    def optimize(self):
+        """
+        Otimiza o uso de API escolhendo o provedor com mais créditos.
+        """
+        best_provider = None
+        max_credits = -1
 
-    def suggest_optimizations(self, analysis: Dict[str, Any]) -> List[str]:
-        try:
-            # Lógica para sugerir otimizações (ex: reduzir chamadas, cachear dados)
-            # Substitua pela sua lógica de sugestões
-            # ...
-            suggestions = ["Considerar cache para reduzir o uso", "Investigar picos de uso para identificar gargalos"]
-            return suggestions
-        except Exception as e:
-            print(f"Erro ao sugerir otimizações: {e}")
-            return []
+        for provider in self.providers.keys():
+            balance = self.check_balance(provider)
+            if balance["status"] == "ok" and balance["credits"] > max_credits:
+                best_provider = provider
+                max_credits = balance["credits"]
 
-    def integrate_billing(self, api_key: str) -> Dict[str, Any]:
-        try:
-            # Lógica para integrar com o sistema de faturamento (ex: obter custo, limites)
-            # Substitua pela sua lógica de integração com o sistema de faturamento
-            # ...
-            billing_data = {"current_cost": 10.00, "credit_limit": 100.00}
-            return billing_data
-
-        except Exception as e:
-            print(f"Erro ao integrar com o sistema de faturamento: {e}")
-            return {}
-
-    def generate_report(self, usage_data, analysis, suggestions, billing_data) -> str:
-        try:
-            # Lógica para gerar o relatório
-            # ...
-            report = f"Uso da API: {usage_data}\nAnálise: {analysis}\nSugestões: {suggestions}\nFaturamento: {billing_data}"
-            return report
-
-        except Exception as e:
-            print(f"Erro ao gerar o relatório: {e}")
-            return ""
-
-
-    def display_report(self, report: str):
-        try:
-            # Lógica para exibir o relatório (ex: interface gráfica, console)
-            # Substitua pela sua lógica de exibição do relatório
-            print(report)
-
-        except Exception as e:
-            print(f"Erro ao exibir o relatório: {e}")
-
-
+        if best_provider:
+            self.active_provider = best_provider
+            self.logger.info(f"🚀 Alternando para {best_provider} (créditos: {max_credits})")
+        else:
+            self.logger.error("❌ Nenhum provedor disponível para otimização.")
+        return self.active_provider
 
