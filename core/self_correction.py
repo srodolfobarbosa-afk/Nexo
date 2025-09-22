@@ -133,12 +133,13 @@ if __name__ == "__main__":
     
     # Recuperar lições aprendidas
     lessons = correction_module.retrieve_learning_lessons()
-    print("\n--- Lições Aprendidas ---")
+    import logging
+    logging.info("--- Lições Aprendidas ---")
     for lesson in lessons:
-        print(f"Lição: {lesson["lesson"]}\nAção: {lesson["action_taken"]}\nEficácia: {lesson["effectiveness"]}\n")
+        logging.info(f"Lição: {lesson['lesson']}\nAção: {lesson['action_taken']}\nEficácia: {lesson['effectiveness']}\n")
 
     lessons_about_context = correction_module.retrieve_learning_lessons(query="contexto")
-    print("\n--- Lições sobre Contexto ---")
+    logging.info("--- Lições sobre Contexto ---")
     for lesson in lessons_about_context:
-        print(f"Lição: {lesson["lesson"]}\nAção: {lesson["action_taken"]}\nEficácia: {lesson["effectiveness"]}\n")
+        logging.info(f"Lição: {lesson['lesson']}\nAção: {lesson['action_taken']}\nEficácia: {lesson['effectiveness']}\n")
 
