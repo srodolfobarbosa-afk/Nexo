@@ -3,6 +3,8 @@ import os
 import json
 import logging
 from datetime import datetime
+    # Additional context lines to ensure proper identification
+    # This is the context around the logging statement
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
@@ -18,7 +20,7 @@ from core.json_utils import extract_json, safe_json_response, create_json_prompt
 import ollama
 import google.generativeai as genai
 import re
-print(f'DEBUG: Chave da API do Gemini: {os.getenv("GOOGLE_API_KEY")}')
+logging.debug(f'DEBUG: Chave da API do Gemini: {os.getenv("GOOGLE_API_KEY")})
 
 from typing import Optional
 gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -73,11 +75,11 @@ class NexoGenesisAgent:
         envs = ["SUPABASE_URL", "SUPABASE_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY", "GROQ_API_KEY"]
         env_faltando = [e for e in envs if not os.getenv(e)]
         if faltando:
-            print(f"[AVISO] Pacotes faltando: {faltando}. Execute \'pip install -r requirements.txt\'.")
+            logging.warning(f"[AVISO] Pacotes faltando: {faltando}. Execute 'pip install -r requirements.txt'.")
         if env_faltando:
-            print(f"[AVISO] Variáveis de ambiente faltando: {env_faltando}. Configure no .env ou render.yaml.")
+            logging.warning(f"[AVISO] Variáveis de ambiente faltando: {env_faltando}. Configure no .env ou render.yaml.")
         if not faltando and not env_faltando:
-            print("[OK] Ambiente validado: todas dependências e variáveis presentes.")
+            logging.info("[OK] Ambiente validado: todas dependências e variáveis presentes.")
     def __init__(self):
         # Informações do criador/dono do sistema
         self.owner_info = {
