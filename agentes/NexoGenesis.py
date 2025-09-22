@@ -120,7 +120,7 @@ class NexoGenesisAgent:
         Registra uma tentativa de evolução na tabela evolution_attempts do Supabase.
         """
         if not self.supabase:
-            print("Supabase não inicializado. Não foi possível registrar tentativa de evolução.")
+            logging.warning("Supabase não inicializado. Não foi possível registrar tentativa de evolução.")
             return
         try:
             data = {
@@ -132,9 +132,9 @@ class NexoGenesisAgent:
                 "reason_for_failure": reason_for_failure,
                 "details": json.dumps(details, ensure_ascii=False) if details else None
             }
-            self.supabase.table(self.evolution_attempts_table).insert(data).execute()
+            logging.info(f"📝 Tentativa de evolução registrada: ciclo {cycle_number}, sucesso: {success}")
             print(f"📝 Tentativa de evolução registrada: ciclo {cycle_number}, sucesso: {success}")
-        except Exception as e:
+            logging.error(f"Erro ao registrar tentativa de evolução: {e}")
             print(f"Erro ao registrar tentativa de evolução: {e}")
 
     def _ensure_evolution_attempts_table(self):
