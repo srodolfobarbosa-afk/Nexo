@@ -143,10 +143,10 @@ class NexoGenesisAgent:
         """
         try:
             self.supabase.table(self.evolution_attempts_table).select("id").limit(0).execute()
-            print(f"Tabela \'{self.evolution_attempts_table}\' existe.")
+            logging.info(f"Tabela '{self.evolution_attempts_table}' existe.")
         except Exception:
-            print(f"Tabela \'{self.evolution_attempts_table}\' não existe. Crie manualmente no Supabase com o seguinte SQL:")
-            print("""
+            logging.warning(f"Tabela '{self.evolution_attempts_table}' não existe. Crie manualmente no Supabase com o seguinte SQL:")
+            logging.warning("""
 CREATE TABLE evolution_attempts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     timestamp TEXT,
