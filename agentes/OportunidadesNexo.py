@@ -21,72 +21,78 @@ class OportunidadesNexo:
         self.supabase: Client = create_client(supabase_url, supabase_key)
         self.data = None
 
-    def conectar_supabase(self):
-        try:
-            # Verificar a conexão -  pode ser necessário adicionar um método de teste de conexão na sua biblioteca supabase
-            # Exemplo: self.supabase.auth.user()  (se a autenticação for necessária)
-            print("Conectado ao Supabase.")
-        except Exception as e:
-            print(f"Erro ao conectar ao Supabase: {e}")
-            raise
+  def conectar_supabase(self):
+    import logging
+    try:
+      # Verificar a conexão -  pode ser necessário adicionar um método de teste de conexão na sua biblioteca supabase
+      # Exemplo: self.supabase.auth.user()  (se a autenticação for necessária)
+      logging.info("Conectado ao Supabase.")
+    except Exception as e:
+      logging.error(f"Erro ao conectar ao Supabase: {e}")
+      raise
 
     def coletar_dados_nexo(self, query: str) -> pd.DataFrame:
-      try:
-        response = self.supabase.table('nome_da_sua_tabela').select("*").execute()
-        if response.data:
-          self.data = pd.DataFrame(response.data)
-          return self.data
-        else:
-          return pd.DataFrame()
-      except Exception as e:
-          print(f"Erro ao coletar dados do Nexo: {e}")
-          return pd.DataFrame()
+        import logging
+        try:
+            response = self.supabase.table('nome_da_sua_tabela').select("*").execute()
+            if response.data:
+                self.data = pd.DataFrame(response.data)
+                return self.data
+            else:
+                return pd.DataFrame()
+        except Exception as e:
+            logging.error(f"Erro ao coletar dados do Nexo: {e}")
+            return pd.DataFrame()
 
     def analisar_dados_mercado(self, dados: pd.DataFrame) -> Dict[str, Any]:
+        import logging
         #  Implementar a análise de mercado usando bibliotecas e APIs
         #  Exemplo de retorno: {'tendência': 'crescimento', 'potencial': 0.8}
         try:
-          #Sua lógica de análise de mercado aqui
-          return {'tendência':'crescimento', 'potencial':0.8}
+            #Sua lógica de análise de mercado aqui
+            return {'tendência':'crescimento', 'potencial':0.8}
         except Exception as e:
-          print(f"Erro na análise de dados de mercado: {e}")
-          return {}
+            logging.error(f"Erro na análise de dados de mercado: {e}")
+            return {}
 
     def prever_tendencias(self, dados: pd.DataFrame) -> Dict[str, Any]:
+        import logging
         # Implementar o modelo de previsão
         # Exemplo de retorno: {'previsao_receita': 1000000, 'previsao_inovacao': 0.9}
         try:
-          #Sua lógica de previsão aqui
-          return {'previsao_receita': 1000000, 'previsao_inovacao': 0.9}
+            #Sua lógica de previsão aqui
+            return {'previsao_receita': 1000000, 'previsao_inovacao': 0.9}
         except Exception as e:
-          print(f"Erro na previsão de tendências: {e}")
-          return {}
+            logging.error(f"Erro na previsão de tendências: {e}")
+            return {}
 
 
-    def gerar_relatorio(self, resultados: Dict[str, Any]) -> str:
-        #  Gerar relatório em formato textual ou outro desejado
-        try:
-            relatorio = f"Relatório de Oportunidades:\n\n"
-            relatorio += f"Tendência de Mercado: {resultados.get('tendência', 'N/A')}\n"
-            relatorio += f"Potencial de Mercado: {resultados.get('potencial', 'N/A')}\n"
-            relatorio += f"Previsão de Receita: {resultados.get('previsao_receita', 'N/A')}\n"
-            relatorio += f"Previsão de Inovação: {resultados.get('previsao_inovacao', 'N/A')}\n"
-            return relatorio
+  def gerar_relatorio(self, resultados: Dict[str, Any]) -> str:
+    import logging
+    #  Gerar relatório em formato textual ou outro desejado
+    try:
+      relatorio = f"Relatório de Oportunidades:\n\n"
+      relatorio += f"Tendência de Mercado: {resultados.get('tendência', 'N/A')}\n"
+      relatorio += f"Potencial de Mercado: {resultados.get('potencial', 'N/A')}\n"
+      relatorio += f"Previsão de Receita: {resultados.get('previsao_receita', 'N/A')}\n"
+      relatorio += f"Previsão de Inovação: {resultados.get('previsao_inovacao', 'N/A')}\n"
+      return relatorio
 
-        except Exception as e:
-            print(f"Erro na geração de relatório: {e}")
-            return "Erro na geração do relatório."
+    except Exception as e:
+      logging.error(f"Erro na geração de relatório: {e}")
+      return "Erro na geração do relatório."
 
 
     def executar(self, query: str):
+        import logging
         self.conectar_supabase()
         dados = self.coletar_dados_nexo(query)
         if not dados.empty:
-          analise = self.analisar_dados_mercado(dados)
-          previsao = self.prever_tendencias(dados)
-          relatorio = self.gerar_relatorio({**analise, **previsao})
-          print(relatorio)
+            analise = self.analisar_dados_mercado(dados)
+            previsao = self.prever_tendencias(dados)
+            relatorio = self.gerar_relatorio({**analise, **previsao})
+            logging.info(relatorio)
         else:
-          print("Nenhum dado encontrado.")
+            logging.warning("Nenhum dado encontrado.")
 
 ```
