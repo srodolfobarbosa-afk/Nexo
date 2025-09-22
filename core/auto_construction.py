@@ -69,18 +69,18 @@ class AutoConstructionModule:
         Pipeline completo de auto-construção de uma nova funcionalidade
         """
         try:
-                logging.info(f"🚀 Iniciando auto-construção: {feature_request}")
+            logging.info(f"🚀 Iniciando auto-construção: {feature_request}")
 
             # 0. Pesquisa de mercado proativa
-                logging.info("🔎 Realizando pesquisa de mercado...")
+            logging.info("🔎 Realizando pesquisa de mercado...")
             mercado_results = self.search.search_web(f"{feature_request} market analysis opportunities", 3)
-                logging.info(f"Resultados da pesquisa de mercado: {json.dumps(mercado_results, indent=2)}")
+            logging.info(f"Resultados da pesquisa de mercado: {json.dumps(mercado_results, indent=2)}")
 
             # 0.1 Análise e estudo proativo
-                logging.info("📊 Analisando e estudando oportunidades...")
+            logging.info("📊 Analisando e estudando oportunidades...")
             estudo_prompt = f"Analise os resultados de mercado e gere oportunidades de receita e inovação para o sistema. Resultados: {json.dumps(mercado_results, indent=2)}"
             estudo_result = self.llm_caller(estudo_prompt, feature_request)
-                logging.info(f"Estudo/Oportunidades: {estudo_result}")
+            logging.info(f"Estudo/Oportunidades: {estudo_result}")
 
             # 1. Architect AI - Planejamento
             architecture = self.architect_ai(feature_request)
@@ -126,11 +126,11 @@ class AutoConstructionModule:
                     "timestamp": datetime.now().isoformat()
                 }
                 if self.github.is_enabled():
-                        logging.info("📡 Fazendo commit automático no GitHub...")
+                    logging.info("📡 Fazendo commit automático no GitHub...")
                     github_success = self.github.auto_commit_construction_result(construction_result)
                     construction_result["github_commit"] = github_success
                 else:
-                        logging.warning("⚠️ Integração GitHub desabilitada")
+                    logging.warning("⚠️ Integração GitHub desabilitada")
                     construction_result["github_commit"] = False
                 return construction_result
             else:
@@ -142,12 +142,12 @@ class AutoConstructionModule:
                     "reason": review.get("issues", ["Erro desconhecido"]),
                     "timestamp": datetime.now().isoformat()
                 }
-                
+
         except Exception as e:
             # Lógica para erro 403 e ação humana
             error_msg = str(e)
             if "403" in error_msg or "forbidden" in error_msg.lower():
-                    logging.error("Erro 403: API do Google. Necessária ação manual: ativar permissão no Google Cloud Console.")
+                logging.error("Erro 403: API do Google. Necessária ação manual: ativar permissão no Google Cloud Console.")
                 # Log especial para ação humana
                 return {
                     "success": False,
@@ -168,26 +168,26 @@ class AutoConstructionModule:
         """
         Architect AI - Planeja a arquitetura da nova funcionalidade
         """
-            logging.info("🏗️ Architect AI analisando requisitos...")
-        
+        logging.info("🏗️ Architect AI analisando requisitos...")
+
         # Busca informações relevantes na internet
         search_results = self.search.search_web(f"{feature_request} implementation architecture", 3)
-        
+
         instruction = f"""
         Você é o Architect AI do ecossistema EcoGuardians.
-        
+
         Requisito: {feature_request}
-        
+
         Informações da internet:
         {json.dumps(search_results, indent=2)}
-        
+
         Crie uma arquitetura detalhada seguindo os princípios éticos do EcoGuardians.
         """
-        
+
         prompt = create_json_prompt(instruction, ARCHITECTURE_SCHEMA)
-        
+
         response = self.llm_caller(prompt, feature_request)
-        
+
         # Usar função robusta de extração JSON
         fallback = {
             "overview": f"Arquitetura para {feature_request}",
@@ -209,41 +209,41 @@ class AutoConstructionModule:
         """
         Coder AI - Implementa o código baseado na arquitetura
         """
-            logging.info("💻 Coder AI implementando código...")
-        
+        logging.info("💻 Coder AI implementando código...")
+
         # Busca exemplos de código relevantes
         tech_stack = " ".join(architecture.get("dependencies", []))
         code_examples = self.search.search_code_examples(tech_stack, architecture["overview"])
-        
+
         instruction = f"""
         Você é o Coder AI do ecossistema EcoGuardians.
-        
+
         Arquitetura:
         {json.dumps(architecture, indent=2)}
-        
+
         Exemplos de código encontrados:
         {json.dumps(code_examples, indent=2)}
-        
+
         Implemente o código completo seguindo a arquitetura.
-        
+
         Garanta que o código:
         1. Siga os princípios éticos do EcoGuardians
         2. Seja bem documentado
         3. Inclua tratamento de erros
         4. Seja compatível com a estrutura existente
         """
-        
+
         prompt = create_json_prompt(instruction, CODE_IMPLEMENTATION_SCHEMA)
-        
+
         response = self.llm_caller(prompt, f"Implementar {architecture['overview']}")
-        
+
         # Usar função robusta de extração JSON
         fallback = {
             "files": {},
             "installation_commands": [],
             "setup_instructions": []
         }
-        
+
         code = safe_json_response(response, fallback)
         self._log_construction_step("coder", architecture["overview"], code)
         return code
@@ -252,8 +252,8 @@ class AutoConstructionModule:
         """
         Reviewer AI - Revisa o código e arquitetura
         """
-            logging.info("🔍 Reviewer AI analisando código...")
-        
+        logging.info("🔍 Reviewer AI analisando código...")
+
         instruction = f"""
         Você é o Reviewer AI do ecossistema EcoGuardians.
 
@@ -307,8 +307,8 @@ class AutoConstructionModule:
         """
         Deployer AI - Faz o deploy do código aprovado
         """
-            logging.info("🚀 Deployer AI fazendo deploy...")
-        
+        logging.info("🚀 Deployer AI fazendo deploy...")
+
         try:
             deployment_result = {
                 "files_created": [],
@@ -317,7 +317,6 @@ class AutoConstructionModule:
                 "git_operations": [],
                 "status": "success"
             }
-            
             # 1. Criar/modificar arquivos
             for file_path, content in code.get("files", {}).items():
                 try:
@@ -329,10 +328,9 @@ class AutoConstructionModule:
                         f.write(content)
                     
                     deployment_result["files_created"].append(file_path)
-                        logging.info(f"✅ Arquivo criado: {file_path}")
-                    
+                    logging.info(f"✅ Arquivo criado: {file_path}")
                 except Exception as e:
-                        logging.error(f"❌ Erro ao criar {file_path}: {e}")
+                    logging.error(f"❌ Erro ao criar {file_path}: {e}")
             
             # 2. Executar comandos de instalação
             for command in code.get("installation_commands", []):
@@ -344,10 +342,9 @@ class AutoConstructionModule:
                         "output": result.stdout,
                         "error": result.stderr
                     })
-                        logging.info(f"✅ Comando executado: {command}")
-                    
+                    logging.info(f"✅ Comando executado: {command}")
                 except Exception as e:
-                        logging.error(f"❌ Erro ao executar {command}: {e}")
+                    logging.error(f"❌ Erro ao executar {command}: {e}")
             
             # 3. Operações Git (se em repositório)
             try:
@@ -359,10 +356,9 @@ class AutoConstructionModule:
                 subprocess.run(f'git commit -m "{commit_message}"', shell=True, cwd="/home/ubuntu/Nexo")
                 
                 deployment_result["git_operations"].append("commit")
-                    logging.info("✅ Commit realizado")
-                
+                logging.info("✅ Commit realizado")
             except Exception as e:
-                    logging.warning(f"⚠️ Operações Git falharam: {e}")
+                logging.warning(f"⚠️ Operações Git falharam: {e}")
             
             self._log_construction_step("deployer", architecture["overview"], deployment_result)
             return deployment_result
@@ -400,8 +396,8 @@ class AutoConstructionModule:
 
 if __name__ == "__main__":
     # Teste do módulo
-        logging.info("🧪 Testando módulo de auto-construção...")
-    
+    logging.info("🧪 Testando módulo de auto-construção...")
+
     # Integração real com Gemini
     import google.generativeai as genai
     import os
@@ -413,9 +409,9 @@ if __name__ == "__main__":
             response = model.generate_content(f"{prompt}\nContexto: {context}")
             return response.text
         except Exception as e:
-                logging.error(f"Erro ao chamar Gemini: {e}")
+            logging.error(f"Erro ao chamar Gemini: {e}")
             return '{"erro": "Falha na chamada Gemini"}'
 
     auto_constructor = AutoConstructionModule(llm_caller)
     result = auto_constructor.auto_construct_feature("Sistema de notificações por email")
-        logging.info(f"Resultado: {result}")
+    logging.info(f"Resultado: {result}")

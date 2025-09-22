@@ -20,7 +20,7 @@ from core.json_utils import extract_json, safe_json_response, create_json_prompt
 import ollama
 import google.generativeai as genai
 import re
-logging.debug(f'DEBUG: Chave da API do Gemini: {os.getenv("GOOGLE_API_KEY")})
+logging.debug(f'DEBUG: Chave da API do Gemini: {os.getenv("GOOGLE_API_KEY")}')
 
 from typing import Optional
 gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -89,12 +89,13 @@ class NexoGenesisAgent:
             "pix": "137.27339730"
         }
         # Manter a inicialização original do Supabase via get_supabase_client()
+
         self.supabase = get_supabase_client()
         self.gemini_api_key = os.environ.get("GEMINI_API_KEY")
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
         self.search_module = InternetSearchModule() # Mantenha por enquanto
         self.web_agent = WebAgent() # Novo WebAgent
-    logging.info("🌐 Agente de navegação web (Playwright) ativo.")
+        logging.info("🌐 Agente de navegação web (Playwright) ativo.")
         self.groq_api_key = os.environ.get("GROQ_API_KEY")
         self.llm_provider = os.environ.get("NEXO_LLM_PROVIDER", "google")
 
@@ -132,10 +133,10 @@ class NexoGenesisAgent:
                 "reason_for_failure": reason_for_failure,
                 "details": json.dumps(details, ensure_ascii=False) if details else None
             }
+            self.supabase.table(self.evolution_attempts_table).insert(data).execute()
             logging.info(f"📝 Tentativa de evolução registrada: ciclo {cycle_number}, sucesso: {success}")
-            print(f"📝 Tentativa de evolução registrada: ciclo {cycle_number}, sucesso: {success}")
+        except Exception as e:
             logging.error(f"Erro ao registrar tentativa de evolução: {e}")
-            print(f"Erro ao registrar tentativa de evolução: {e}")
 
     def _ensure_evolution_attempts_table(self):
         """
@@ -162,17 +163,17 @@ CREATE TABLE evolution_attempts (
         """
         Salva uma ideia/interação como embedding vetorial.
         """
-    doc_id = self.vector_memory.salvar_ideia(texto, metadados)
-    logging.info(f"✅ Ideia registrada na memória vetorial: {doc_id}")
-    return doc_id
-#
+        doc_id = self.vector_memory.salvar_ideia(texto, metadados)
+        logging.info(f"✅ Ideia registrada na memória vetorial: {doc_id}")
+        return doc_id
+
     def buscar_ideias_semelhantes(self, consulta, k=3):
         """
         Busca ideias/interações semelhantes por similaridade semântica.
         """
-    resultados = self.vector_memory.buscar_similaridade(consulta, k)
-    logging.info(f"🔎 Ideias semelhantes encontradas: {resultados}")
-    return resultados
+        resultados = self.vector_memory.buscar_similaridade(consulta, k)
+        logging.info(f"🔎 Ideias semelhantes encontradas: {resultados}")
+        return resultados
     def pesquisa_web_avancada(self, url, seletor=None):
         """
         Usa o WebAgent para buscar e extrair dados de uma página web.
