@@ -19,9 +19,10 @@ class MarketWatcherEconomico:
     async def connect_to_database(self):
         try:
             await self.supabase.auth.set_auth("YOUR_AUTH_TOKEN") # Substituir com a sua autenticação
-            print("Conectado ao Supabase!")
+            import logging
+            logging.info("Conectado ao Supabase!")
         except Exception as e:
-            print(f"Erro ao conectar ao Supabase: {e}")
+            logging.error(f"Erro ao conectar ao Supabase: {e}")
 
     async def fetch_market_data(self, symbol: str, source: str ="yfinance") -> Dict[str, Any]:
         try:
@@ -32,7 +33,7 @@ class MarketWatcherEconomico:
             data = ticker.history(period="1d")
             return data.to_dict()
         except Exception as e:
-            print(f"Erro ao buscar dados de mercado: {e}")
+            logging.error(f"Erro ao buscar dados de mercado: {e}")
             return {}
 
     async def analyze_market_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -45,18 +46,19 @@ class MarketWatcherEconomico:
             analysis = {"close_price": close_price, "recommendation": "Compra" if close_price < 100 else "Venda"}
             return analysis
         except Exception as e:
-            print(f"Erro na análise de dados de mercado: {e}")
+            logging.error(f"Erro na análise de dados de mercado: {e}")
             return {"analysis": "Erro na análise"}
 
     async def store_data(self, data: Dict[str, Any], symbol:str) -> None:
         try:
             await self.supabase.table('market_data').insert({'symbol':symbol, 'data':data}).execute()
         except Exception as e:
-            print(f"Erro ao armazenar dados no Supabase: {e}")
+            logging.error(f"Erro ao armazenar dados no Supabase: {e}")
 
     async def send_alerts(self, alert_message: str) -> None:
         # Implementar sistema de alertas (email, notificações push, etc)
-        print(f"Alerta: {alert_message}")
+    import logging
+    logging.warning(f"Alerta: {alert_message}")
 
     async def run(self):
         await self.connect_to_database()
@@ -71,7 +73,7 @@ class MarketWatcherEconomico:
                     await self.send_alerts("Oportunidade de compra identificada!")
                 time.sleep(60) #Ajustar o intervalo de tempo
             except Exception as e:
-                print(f"Erro durante a execução do agente: {e}")
+                logging.error(f"Erro durante a execução do agente: {e}")
                 time.sleep(60)
 
 
