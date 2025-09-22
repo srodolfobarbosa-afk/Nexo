@@ -94,7 +94,7 @@ class NexoGenesisAgent:
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
         self.search_module = InternetSearchModule() # Mantenha por enquanto
         self.web_agent = WebAgent() # Novo WebAgent
-        print("🌐 Agente de navegação web (Playwright) ativo.")
+    logging.info("🌐 Agente de navegação web (Playwright) ativo.")
         self.groq_api_key = os.environ.get("GROQ_API_KEY")
         self.llm_provider = os.environ.get("NEXO_LLM_PROVIDER", "google")
 
