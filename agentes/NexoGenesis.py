@@ -162,17 +162,17 @@ CREATE TABLE evolution_attempts (
         """
         Salva uma ideia/interação como embedding vetorial.
         """
-        doc_id = self.vector_memory.salvar_ideia(texto, metadados)
-        print(f"✅ Ideia registrada na memória vetorial: {doc_id}")
-        return doc_id
+    doc_id = self.vector_memory.salvar_ideia(texto, metadados)
+    logging.info(f"✅ Ideia registrada na memória vetorial: {doc_id}")
+    return doc_id
 #
     def buscar_ideias_semelhantes(self, consulta, k=3):
         """
         Busca ideias/interações semelhantes por similaridade semântica.
         """
-        resultados = self.vector_memory.buscar_similaridade(consulta, k)
-        print(f"🔎 Ideias semelhantes encontradas: {resultados}")
-        return resultados
+    resultados = self.vector_memory.buscar_similaridade(consulta, k)
+    logging.info(f"🔎 Ideias semelhantes encontradas: {resultados}")
+    return resultados
     def pesquisa_web_avancada(self, url, seletor=None):
         """
         Usa o WebAgent para buscar e extrair dados de uma página web.
