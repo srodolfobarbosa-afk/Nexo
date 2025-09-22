@@ -15,9 +15,10 @@ class MarketWatchAgent:
     def __init__(self):
         try:
             self.supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-            print("Conectado ao Supabase.")
+            import logging
+            logging.info("Conectado ao Supabase.")
         except Exception as e:
-            print(f"Erro ao conectar ao Supabase: {e}")
+            logging.error(f"Erro ao conectar ao Supabase: {e}")
         from core.api_search import APISearch
         self.api_search = APISearch()
             exit(1)
@@ -35,7 +36,7 @@ class MarketWatchAgent:
                 "low": data["Low"][-1],
             }
         except Exception as e:
-            print(f"Erro ao buscar dados de {ticker}: {e}")
+            logging.error(f"Erro ao buscar dados de {ticker}: {e}")
             return {}
 
     def detect_large_variation(self, previous_close: float, current_close: float, threshold: float = 0.05) -> bool:
@@ -44,7 +45,8 @@ class MarketWatchAgent:
 
     def notify(self, message: str):
         # Substitua pela sua implementação de notificação (email, SMS, etc)
-        print(f"Notificação: {message}")
+    import logging
+    logging.info(f"Notificação: {message}")
 
     def monitor_market(self, tickers: List[str], threshold: float = 0.05, interval: int = 60):
         try:
@@ -59,29 +61,29 @@ class MarketWatchAgent:
                                 self.notify(message)
                         previous_data[ticker] = current_data
                     else:
-                        print(f"Dados insuficientes para {ticker}")
+                        logging.warning(f"Dados insuficientes para {ticker}")
 
                 time.sleep(interval)
         except KeyboardInterrupt:
-            print("Monitoramento encerrado.")
+            logging.info("Monitoramento encerrado.")
         except Exception as e:
-            print(f"Erro no monitoramento: {e}")
+            logging.error(f"Erro no monitoramento: {e}")
 
 
     def persist_data(self, data: Dict[str, Any]):
         try:
             response = self.supabase.table("market_data").insert(data).execute()
             if response.error:
-                print(f"Erro ao persistir dados no Supabase: {response.error}")
+                logging.error(f"Erro ao persistir dados no Supabase: {response.error}")
 
         except Exception as e:
-            print(f"Erro ao persistir dados: {e}")
+            logging.error(f"Erro ao persistir dados: {e}")
 
     def run(self, tickers:List[str]):
         try:
             self.monitor_market(tickers)
         except Exception as e:
-            print(f"Erro na execução do agente: {e}")
+            logging.error(f"Erro na execução do agente: {e}")
 
 
 if __name__ == "__main__":
