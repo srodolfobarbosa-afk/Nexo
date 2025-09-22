@@ -267,9 +267,9 @@ CREATE TABLE evolution_attempts (
             #   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             # );
             
-            print("Estruturas de banco de dados inicializadas (conceitual).")
+            logging.info("Estruturas de banco de dados inicializadas (conceitual).")
         except Exception as e:
-            print(f"Erro ao inicializar banco de dados: {e}")
+            logging.error(f"Erro ao inicializar banco de dados: {e}")
 
     def _ensure_tables_exist(self):
         # Verifica e cria tabelas essenciais no Supabase
