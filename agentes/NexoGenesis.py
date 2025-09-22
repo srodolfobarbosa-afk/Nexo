@@ -217,13 +217,13 @@ CREATE TABLE evolution_attempts (
                 try:
                     # Exemplo de missão proativa: buscar oportunidades de mercado
                     proactive_mission = "Pesquisar oportunidades de receita e inovação para o sistema Nexo."
-                    print(f"🤖 [Proativo] Iniciando missão automática: {proactive_mission}")
+                    logging.info(f"🤖 [Proativo] Iniciando missão automática: {proactive_mission}")
                     result = self.process_mission(proactive_mission, user_id)
-                    print(f"🤖 [Proativo] Resultado da missão: {result}")
+                    logging.info(f"🤖 [Proativo] Resultado da missão: {result}")
                     # Enviar mensagem automática (pode ser por e-mail, Telegram, etc.)
                     # Aqui apenas imprime, mas pode ser integrado com notificações reais
                 except Exception as e:
-                    print(f"Erro na automação proativa: {e}")
+                    logging.error(f"Erro na automação proativa: {e}")
                 time.sleep(600)  # Executa a cada 10 minutos (ajuste conforme necessário)
         t = threading.Thread(target=automation_loop, daemon=True)
         t.start()
