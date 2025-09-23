@@ -48,12 +48,12 @@ except Exception:
     pass
 
 
-# Iniciar mission runner no primeiro request do Flask (garante que o worker do Gunicorn inicialize a thread)
+# Iniciar mission runner no primeiro request/do ciclo de vida do Flask.
 def _maybe_start_mission_runner():
     try:
         start_flag = os.environ.get('START_MISSION_RUNNER', '1')
         if start_flag in ('1', 'true', 'True'):
-            logger.info('Inicializando mission runner via before_first_request')
+            logger.info('Inicializando mission runner (startup wrapper)')
             start_background(interval=int(os.environ.get('MISSION_INTERVAL', '6')))
         else:
             logger.info('Mission runner desativado via START_MISSION_RUNNER env')
@@ -61,10 +61,32 @@ def _maybe_start_mission_runner():
         logger.error(f'Erro ao iniciar mission runner: {e}')
 
 
-@app.before_first_request
-def _start_runner_on_first_request():
-    # roda apenas uma vez por processo
-    _maybe_start_mission_runner()
+# Flask versions differ in lifecycle hooks. Prefer `before_first_request` when available,
+# otherwise try `before_serving`. As a robust fallback, wrap the WSGI app so we start
+# the runner on the first handled request in this process (works with gunicorn workers).
+_runner_started = {'started': False}
+if hasattr(app, 'before_first_request'):
+    @app.before_first_request
+    def _start_runner_on_first_request():
+        _maybe_start_mission_runner()
+elif hasattr(app, 'before_serving'):
+    @app.before_serving
+    def _start_runner_on_first_request():
+        _maybe_start_mission_runner()
+else:
+    # WSGI wrapper fallback: call once before delegating to original WSGI app
+    _orig_wsgi = app.wsgi_app
+
+    def _wsgi_start_wrapper(environ, start_response):
+        if not _runner_started['started']:
+            try:
+                _maybe_start_mission_runner()
+            except Exception:
+                pass
+            _runner_started['started'] = True
+        return _orig_wsgi(environ, start_response)
+
+    app.wsgi_app = _wsgi_start_wrapper
 
 
 @app.route("/")
@@ -224,64 +246,6 @@ def ws(ws):
         time.sleep(2)
 
 
-@app.route('/stream')
-def stream():
-    """Server-Sent Events (SSE) endpoint que envia mensagens periódicas no formato 'data: <json>\n\n'.
-    Útil para dashboards ou clients que não desejam WebSocket.
-    """
-    def event_stream():
-        api_keys = [k for k in os.environ.keys() if 'KEY' in k]
-        api_keys_mem = api_keys.copy()
-        # enviar alguns eventos indefinidamente — o cliente pode fechar quando quiser
-        while True:
-            try:
-                monitor = {
-                    "type": "monitor",
-                    "content": [
-                        f"Status NexoGenesis: {'ativo' }",
-                        f"EcoFinance: Receita R$ 1000, Despesa R$ 400",
-                    ]
-                }
-                yield f"data: {json.dumps(monitor)}\n\n"
 
-                agents = {
-                    'agents': get_agents()
-                }
-                yield f"data: {json.dumps({'type':'agentes_status','agentes':agents})}\n\n"
-
-                time.sleep(2)
-            except GeneratorExit:
-                break
-            except Exception:
-                # não quebrar o stream
-                yield f"data: {json.dumps({'type':'error','message':'stream error'})}\n\n"
-
-    return app.response_class(event_stream(), mimetype='text/event-stream')
-
-
-if __name__ == "__main__":
-    # iniciar mission runner em background (produção: executar apenas em um processo cron/worker separado)
-    try:
-        start_background(interval=6)
-    except Exception:
-        pass
-    app.run(host="0.0.0.0", port=8000)
-
-@app.route('/admin/revenue')
-def admin_revenue():
-    """Retorna total de receita (protegido por JWT)."""
-    auth = request.headers.get('Authorization', '')
-    if not auth.startswith('Bearer '):
-        return make_response(jsonify({'error': 'missing_token'}), 401)
-    token = auth.split(' ', 1)[1]
-    try:
-        _ = verify_token(token)
-    except Exception:
-        return make_response(jsonify({'error': 'invalid_token'}), 401)
-    try:
-        total = sqlite_client.get_total_revenue()
-    except Exception:
-        total = 0.0
-    return jsonify({'revenue': total})
 
 
