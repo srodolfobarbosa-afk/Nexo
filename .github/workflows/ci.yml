@@ -65,7 +65,7 @@ jobs:
 
       - name: Run lint (flake8)
         run: |
-          flake8 --max-line-length=120 || true
+          flake8 --max-line-length=120
 
       - name: Run tests
         run: |
