@@ -1,36 +1,50 @@
-psutil
-flask-sock
-flask
-gunicorn
-requests
-psutil
-flask-sock
-flask
-gunicorn
-requests
-supabase
-google-generativeai
-openai
-groq
-python-dotenv
-google-api-python-client
-pytest
-ollama
+
+# Core web
+flask>=2.2
+flask-sock>=0.5
+flask-cors>=3.0
+gunicorn>=20.1
+uvicorn>=0.23
+websockets>=11.0
+
+# System/monitoring
+psutil>=5.9
+
+# HTTP / utils
+requests>=2.28
+python-dotenv>=1.0
+
+# Databases and persistence
+supabase>=2.0
+psycopg2-binary>=2.9
+sqlalchemy>=1.4,<2.1
+
+# LLM providers
+google-generativeai>=0.8
+openai>=0.27
+groq>=0.1
+ollama>=0.1
+
+# Vector DB / Embeddings
+langchain>=0.2
+chromadb>=0.3
+
+# NLP / scraping
+beautifulsoup4>=4.12
+vaderSentiment>=3.3
+playwright>=1.36
+
+# Bot / Telegram
+pyTelegramBotAPI>=4.10
+
+# Security & auth
+python-jose>=3.3
+cryptography>=41.0
+
+# Testing
+pytest>=8.0
+
+# Packaging helpers
 setuptools
 wheel
-Werkzeug
-vaderSentiment
-pyTelegramBotAPI
-playwright
-beautifulsoup4
-langchain
-chromadb
-chromadb
-psycopg2-binary
-sqlalchemy
-uvicorn
-websockets
-flask-cors
-python-jose
-cryptography
 

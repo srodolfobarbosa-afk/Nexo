@@ -19,8 +19,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          # instalar o package em modo editável para evitar manipular PYTHONPATH
+          pip install -e .
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           pytest -q
+      - name: Lint (ruff)
+        run: |
+          python -m pip install ruff
+          ruff check .
