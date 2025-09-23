@@ -428,39 +428,23 @@ CREATE TABLE evolution_attempts (
         """
         Função centralizada para chamar LLMs, usando APIcreditOptimizer para seleção e fallback.
         """
-        from agentes.APIcreditOptimizer import APIcreditOptimizer
-        optimizer = APIcreditOptimizer()
-        selected_provider = optimizer.select_provider()
-
-        if not selected_provider:
-            logger.error("Nenhum provedor de LLM disponível para chamada.")
-            return "Erro: Nenhum LLM disponível."
-
-        # Lógica para chamar o LLM com base no provedor selecionado
+        # Usa o módulo de fallback centralizado
         try:
-            if selected_provider == "openai":
-                # Exemplo de chamada OpenAI
-                # response = openai.Completion.create(engine="davinci", prompt=prompt, max_tokens=150)
-                # return response.choices[0].text.strip()
-                return f"Simulação OpenAI para: {prompt}"
-            elif selected_provider == "gemini":
-                # Exemplo de chamada Gemini
-                # model = genai.GenerativeModel("gemini-pro")
-                # response = model.generate_content(prompt)
-                # return response.text
-                return f"Simulação Gemini para: {prompt}"
-            elif selected_provider == "groq":
-                # Exemplo de chamada Groq
-                # client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-                # chat_completion = client.chat.completions.create(messages=[{"role": "user", "content": prompt}], model="llama3-8b-8192")
-                # return chat_completion.choices[0].message.content
-                return f"Simulação Groq para: {prompt}"
-            else:
-                return "Erro: Provedor de LLM desconhecido."
+            from core.llm_fallback import call_with_fallback
         except Exception as e:
-            logger.error(f"Erro ao chamar LLM ({selected_provider}): {e}")
-            # Tentar fallback ou registrar erro
-            return f"Erro ao chamar LLM: {e}"
+            logger.error(f"llm_fallback não disponível: {e}")
+            return "Erro interno: módulo de LLM indisponível." 
+
+        preferred = os.environ.get('NEXO_LLM_PROVIDER') or self.llm_provider
+        result = call_with_fallback(prompt, model=model_name, preferred=preferred)
+        provider = result.get('provider')
+        resp = result.get('response')
+        if provider:
+            logger.info(f"LLM resposta obtida via {provider}")
+            return resp
+        else:
+            logger.error(f"LLM falhou: {resp}")
+            return f"Erro ao obter resposta LLM: {resp}"
 
     def process_mission(self, mission_prompt: str, user_id: str = "default_user") -> str:
         """
