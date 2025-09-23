@@ -165,3 +165,18 @@ python tools/secret_store.py get SUPABASE_KEY
 ```
 
 Se preferir não usar o utilitário local, armazene as chaves apenas no painel do Render como secrets.
+
+Validação automatizada de deploy
+--------------------------------
+Incluí um utilitário `tools/validate_deploy.py` que executa testes básicos:
+- `/status` (saúde)
+- `/auth/token` (gera token se credenciais fornecidas)
+- `/objective` (GET)
+- `/chat` (POST)
+
+Uso:
+```bash
+python tools/validate_deploy.py --base https://<your-service>.onrender.com --auth-user admin --auth-pass <password>
+```
+
+O script também tenta gravar diretamente no Supabase via REST se `SUPABASE_URL` e `SUPABASE_KEY` estiverem no ambiente.
