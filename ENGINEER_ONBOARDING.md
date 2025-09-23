@@ -180,3 +180,42 @@ python tools/validate_deploy.py --base https://<your-service>.onrender.com --aut
 ```
 
 O script também tenta gravar diretamente no Supabase via REST se `SUPABASE_URL` e `SUPABASE_KEY` estiverem no ambiente.
+
+Runbook final para produção
+---------------------------
+1) Segurança inicial
+  - Rotacione quaisquer chaves expostas imediatamente.
+  - Gere uma `service_role` key apenas para operações server-side e mantenha-a em Render Secrets.
+  - Garanta que `SUPABASE_KEY` no Render seja a key correta (service role apenas se necessário).
+
+2) Migrations
+  - No painel do Supabase SQL, rode em ordem:
+    - `supabase_migrations/001_create_tables.sql`
+    - `supabase_migrations/002_rls_policies.sql`
+  - Verifique esquema e testes manuais (SELECT COUNT(*) nas tabelas).
+
+3) Deploy inicial (Render)
+  - Adicione variáveis e secrets conforme instruções.
+  - Mantenha `START_MISSION_RUNNER=0` durante validação.
+  - Redeploy e valide endpoints com `tools/validate_deploy.py`.
+
+4) Habilitar Runner
+  - Quando persistência confirmada, set `START_MISSION_RUNNER=1`.
+  - Monitore `agent_logs` e o dashboard por 24-72h.
+
+5) Backups e auditoria
+  - Agende backups regulares do banco Postgres (Supabase snapshots ou export).
+  - Revise `agent_logs` semanalmente.
+
+6) Auto-evolution (gate control)
+  - Configure um pipeline CI para auto-evolution com validação e aprovação humana antes de merge automático.
+  - Não habilite merges automáticos sem testes e revisões.
+
+7) Operação financeira (EcoBank)
+  - Antes de integrar pagamentos reais, implemente KYC, validações e sandboxes de provedor de pagamento.
+  - Use o stub em `core/ecobank.py` apenas para simulação.
+
+8) Próximos marcos
+  - Integrar vector DB (production provider) e treinar memórias semânticas.
+  - Automatizar a coleta de métricas para avaliação de agentes.
+
