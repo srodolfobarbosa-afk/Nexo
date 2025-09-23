@@ -25,6 +25,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from core.database import get_supabase_client
 from core.agent_registry import register_agent, get_agents
 from core.jwt_auth import create_token, verify_token
+from core.mission_runner import start_background
+from core import sqlite_client
 from agentes.NexoGenesis import NexoGenesisAgent
 from agentes.EcoFinance import EcoFinanceAgent
 from agentes.APIcreditOptimizer import APIcreditOptimizer
@@ -44,6 +46,25 @@ try:
 except Exception:
     # não falhar se o registrador estiver indisponível
     pass
+
+
+# Iniciar mission runner no primeiro request do Flask (garante que o worker do Gunicorn inicialize a thread)
+def _maybe_start_mission_runner():
+    try:
+        start_flag = os.environ.get('START_MISSION_RUNNER', '1')
+        if start_flag in ('1', 'true', 'True'):
+            logger.info('Inicializando mission runner via before_first_request')
+            start_background(interval=int(os.environ.get('MISSION_INTERVAL', '6')))
+        else:
+            logger.info('Mission runner desativado via START_MISSION_RUNNER env')
+    except Exception as e:
+        logger.error(f'Erro ao iniciar mission runner: {e}')
+
+
+@app.before_first_request
+def _start_runner_on_first_request():
+    # roda apenas uma vez por processo
+    _maybe_start_mission_runner()
 
 
 @app.route("/")
@@ -239,6 +260,28 @@ def stream():
 
 
 if __name__ == "__main__":
+    # iniciar mission runner em background (produção: executar apenas em um processo cron/worker separado)
+    try:
+        start_background(interval=6)
+    except Exception:
+        pass
     app.run(host="0.0.0.0", port=8000)
+
+@app.route('/admin/revenue')
+def admin_revenue():
+    """Retorna total de receita (protegido por JWT)."""
+    auth = request.headers.get('Authorization', '')
+    if not auth.startswith('Bearer '):
+        return make_response(jsonify({'error': 'missing_token'}), 401)
+    token = auth.split(' ', 1)[1]
+    try:
+        _ = verify_token(token)
+    except Exception:
+        return make_response(jsonify({'error': 'invalid_token'}), 401)
+    try:
+        total = sqlite_client.get_total_revenue()
+    except Exception:
+        total = 0.0
+    return jsonify({'revenue': total})
 
 
