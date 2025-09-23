@@ -24,7 +24,7 @@ import logging
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from core.database import get_supabase_client
 from core.agent_registry import register_agent, get_agents
-from core.jwt_auth import create_token, verify_token
+from core.jwt_auth import create_token, verify_token, require_jwt
 from core.mission_runner import start_background
 from core import sqlite_client
 from agentes.NexoGenesis import NexoGenesisAgent
@@ -114,6 +114,10 @@ def auth_token():
     username = data.get('username')
     password = data.get('password')
 
+    # Se estamos usando Supabase/Auth em produção, não permitir o token dev
+    if os.environ.get('USE_SUPABASE_AUTH', '0') in ('1', 'true', 'True'):
+        return make_response(jsonify({'error': 'dev_token_disabled', 'msg': 'Use identity provider (Supabase/OIDC) to obtain tokens'}), 403)
+
     # Credenciais de desenvolvimento (substituir em produção)
     DEV_USER = os.environ.get('AUTH_USERNAME', 'admin')
     DEV_PASS = os.environ.get('AUTH_PASSWORD', 'password')
@@ -125,18 +129,77 @@ def auth_token():
 
 
 @app.route('/api/agents', methods=['GET'])
+@require_jwt
 def api_agents():
     """Retorna agentes registrados. Requer Authorization: Bearer <token>"""
-    auth = request.headers.get('Authorization', '')
-    if not auth.startswith('Bearer '):
-        return make_response(jsonify({'error': 'missing_token'}), 401)
-    token = auth.split(' ', 1)[1]
-    try:
-        payload = verify_token(token)
-    except Exception:
-        return make_response(jsonify({'error': 'invalid_token'}), 401)
+    from flask import g
+    payload = g.jwt_payload
     agents = get_agents()
     return jsonify({'user': payload.get('sub'), 'agents': agents})
+
+
+@app.route('/api/memory', methods=['GET'])
+@require_jwt
+def api_memory():
+    """Retorna memórias de longo prazo (persistidas) - protegido por JWT."""
+    from flask import g
+    payload = g.jwt_payload
+    try:
+        # listar memórias (limit param opcional)
+        limit = int(request.args.get('limit', '50'))
+        from core.sqlite_client import get_session, Memory
+        s = get_session()
+        rows = s.query(Memory).order_by(Memory.created_at.desc()).limit(limit).all()
+        s.close()
+        items = [{'id': r.id, 'key': r.key, 'data': r.data, 'created_at': r.created_at.isoformat()} for r in rows]
+        return jsonify({'user': payload.get('sub'), 'memories': items})
+    except Exception as e:
+        logger.error(f"Erro ao buscar memórias: {e}")
+        return make_response(jsonify({'error': 'internal_error'}), 500)
+
+
+@app.route('/api/revenue', methods=['GET'])
+@require_jwt
+def api_revenue():
+    """Retorna receita total acumulada."""
+    from flask import g
+    payload = g.jwt_payload
+    try:
+        total = sqlite_client.get_total_revenue()
+        return jsonify({'user': payload.get('sub'), 'total_revenue': total})
+    except Exception as e:
+        logger.error(f"Erro ao calcular receita: {e}")
+        return make_response(jsonify({'error': 'internal_error'}), 500)
+
+
+@app.route('/api/missions/start', methods=['POST'])
+@require_jwt
+def api_missions_start():
+    """Força o start do mission runner nesta instância."""
+    from flask import g
+    payload = g.jwt_payload
+    try:
+        interval = int(request.json.get('interval', os.environ.get('MISSION_INTERVAL', '6')))
+        _maybe_start_mission_runner()
+        return jsonify({'user': payload.get('sub'), 'status': 'started', 'interval': interval})
+    except Exception as e:
+        logger.error(f"Erro ao iniciar mission runner via API: {e}")
+        return make_response(jsonify({'error': 'internal_error'}), 500)
+
+
+@app.route('/api/missions/stop', methods=['POST'])
+@require_jwt
+def api_missions_stop():
+    """Para o mission runner (por processo)."""
+    from flask import g
+    payload = g.jwt_payload
+    try:
+        from core.mission_runner import stop_runner
+        stop_runner()
+        return jsonify({'user': payload.get('sub'), 'status': 'stopped'})
+    except Exception as e:
+        logger.error(f"Erro ao parar mission runner via API: {e}")
+        return make_response(jsonify({'error': 'internal_error'}), 500)
 
 
 @sock.route('/ws')
