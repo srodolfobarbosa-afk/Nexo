@@ -36,6 +36,15 @@ app = Flask(__name__, static_folder="../app/static", static_url_path="/static")
 CORS(app)
 sock = Sock(app)
 
+# Registrar agentes iniciais em estado 'idle' para exponibilizar via API sem conexão WS
+try:
+    register_agent('NexoGenesis', {'status': 'idle'})
+    register_agent('EcoFinance', {'status': 'idle'})
+    register_agent('APIcreditOptimizer', {'status': 'idle'})
+except Exception:
+    # não falhar se o registrador estiver indisponível
+    pass
+
 
 @app.route("/")
 def home():
@@ -192,6 +201,41 @@ def ws(ws):
         ws.send(json.dumps({"type": "config", "config": config_html, "api_keys": api_keys_mem}))
 
         time.sleep(2)
+
+
+@app.route('/stream')
+def stream():
+    """Server-Sent Events (SSE) endpoint que envia mensagens periódicas no formato 'data: <json>\n\n'.
+    Útil para dashboards ou clients que não desejam WebSocket.
+    """
+    def event_stream():
+        api_keys = [k for k in os.environ.keys() if 'KEY' in k]
+        api_keys_mem = api_keys.copy()
+        # enviar alguns eventos indefinidamente — o cliente pode fechar quando quiser
+        while True:
+            try:
+                monitor = {
+                    "type": "monitor",
+                    "content": [
+                        f"Status NexoGenesis: {'ativo' }",
+                        f"EcoFinance: Receita R$ 1000, Despesa R$ 400",
+                    ]
+                }
+                yield f"data: {json.dumps(monitor)}\n\n"
+
+                agents = {
+                    'agents': get_agents()
+                }
+                yield f"data: {json.dumps({'type':'agentes_status','agentes':agents})}\n\n"
+
+                time.sleep(2)
+            except GeneratorExit:
+                break
+            except Exception:
+                # não quebrar o stream
+                yield f"data: {json.dumps({'type':'error','message':'stream error'})}\n\n"
+
+    return app.response_class(event_stream(), mimetype='text/event-stream')
 
 
 if __name__ == "__main__":
