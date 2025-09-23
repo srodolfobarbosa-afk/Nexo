@@ -3,6 +3,11 @@ flask-sock
 flask
 gunicorn
 requests
+psutil
+flask-sock
+flask
+gunicorn
+requests
 supabase
 google-generativeai
 openai
@@ -19,7 +24,13 @@ pyTelegramBotAPI
 playwright
 beautifulsoup4
 langchain
-
-
 chromadb
+chromadb
+psycopg2-binary
+sqlalchemy
+uvicorn
+websockets
+flask-cors
+python-jose
+cryptography
 
