@@ -9,11 +9,15 @@ import psutil
 from datetime import datetime
 import glob
 import sys
+import logging
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from core.database import get_supabase_client
 from agentes.NexoGenesis import NexoGenesisAgent
 from agentes.EcoFinance import EcoFinanceAgent
 from agentes.APIcreditOptimizer import APIcreditOptimizer
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("ws_server")
 
 app = Flask(__name__, static_folder="../app/static", static_url_path="/static")
 sock = Sock(app)
@@ -24,11 +28,30 @@ def home():
 
 @sock.route('/ws')
 def ws(ws):
-    # Instanciar agentes reais
-    nexo = NexoGenesisAgent()
-    eco = EcoFinanceAgent()
-    api_opt = APIcreditOptimizer()
+    # Instanciar agentes reais (tolerante a falhas individuais)
     supabase = get_supabase_client()
+    agents = {}
+    try:
+        nexo = NexoGenesisAgent()
+        agents['NexoGenesis'] = nexo
+        logger.info("Agente NexoGenesis inicializado com sucesso.")
+    except Exception as e:
+        logger.error(f"Falha ao inicializar NexoGenesis: {e}")
+        nexo = None
+    try:
+        eco = EcoFinanceAgent()
+        agents['EcoFinance'] = eco
+        logger.info("Agente EcoFinance inicializado com sucesso.")
+    except Exception as e:
+        logger.error(f"Falha ao inicializar EcoFinance: {e}")
+        eco = None
+    try:
+        api_opt = APIcreditOptimizer()
+        agents['APIcreditOptimizer'] = api_opt
+        logger.info("Agente APIcreditOptimizer inicializado com sucesso.")
+    except Exception as e:
+        logger.error(f"Falha ao inicializar APIcreditOptimizer: {e}")
+        api_opt = None
     api_keys = [k for k in os.environ.keys() if 'KEY' in k]
     # API Keys gerenciadas em memória (mock)
     api_keys_mem = api_keys.copy()
@@ -52,9 +75,9 @@ def ws(ws):
             pass
         # Monitor visual dividido em 3 partes
         monitor_htmls = [
-            f"<div><strong>Status NexoGenesis:</strong> {nexo.get_status()['nexo_genesis']}</div>",
+            f"<div><strong>Status NexoGenesis:</strong> {nexo.get_status()['nexo_genesis'] if nexo else 'indisponivel'}</div>",
             f"<div><strong>EcoFinance:</strong> Receita R$ 1000, Despesa R$ 400</div>",
-            f"<div><strong>APIcreditOptimizer:</strong> Requests: {api_opt.monitor_api_usage('dummy').get('requests',0)}</div>"
+            f"<div><strong>APIcreditOptimizer:</strong> Requests: {api_opt.monitor_api_usage('dummy').get('requests',0) if api_opt else 0}</div>"
         ]
         ws.send(json.dumps({
             "type": "monitor",
@@ -62,9 +85,9 @@ def ws(ws):
         }))
         # Status dos agentes (CPU/RAM reais do sistema)
         agentes_cards = [
-            {"nome": "NexoGenesis", "status": nexo.get_status()['nexo_genesis'], "cpu": psutil.cpu_percent(), "ram": psutil.virtual_memory().percent, "tarefasHora": nexo.get_status().get('missoes_processadas', 0)},
-            {"nome": "EcoFinance", "status": "ativo", "cpu": psutil.cpu_percent(), "ram": psutil.virtual_memory().percent, "tarefasHora": 0},
-            {"nome": "APIcreditOptimizer", "status": "ativo", "cpu": psutil.cpu_percent(), "ram": psutil.virtual_memory().percent, "tarefasHora": 0}
+            {"nome": "NexoGenesis", "status": (nexo.get_status()['nexo_genesis'] if nexo else 'indisponivel'), "cpu": psutil.cpu_percent(), "ram": psutil.virtual_memory().percent, "tarefasHora": (nexo.get_status().get('missoes_processadas', 0) if nexo else 0)},
+            {"nome": "EcoFinance", "status": ("ativo" if eco else "indisponivel"), "cpu": psutil.cpu_percent(), "ram": psutil.virtual_memory().percent, "tarefasHora": 0},
+            {"nome": "APIcreditOptimizer", "status": ("ativo" if api_opt else "indisponivel"), "cpu": psutil.cpu_percent(), "ram": psutil.virtual_memory().percent, "tarefasHora": 0}
         ]
         ws.send(json.dumps({
             "type": "agentes_status",
