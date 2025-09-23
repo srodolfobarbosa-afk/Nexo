@@ -14,6 +14,9 @@ venv/*
 
 # Node / misc
 node_modules/
+
+# Ignore SQLite DB files created during development
+.db
 .DS_Store
 
 # editors
