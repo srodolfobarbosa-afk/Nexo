@@ -23,13 +23,16 @@ import logging
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from core.database import get_supabase_client
-from core.agent_registry import register_agent, get_agents
+from core.agent_registry import register_agent, get_agents, update_agent
 from core.jwt_auth import create_token, verify_token, require_jwt
 from core.mission_runner import start_background
 from core import sqlite_client
 from agentes.NexoGenesis import NexoGenesisAgent
 from agentes.EcoFinance import EcoFinanceAgent
 from agentes.APIcreditOptimizer import APIcreditOptimizer
+from core.llm_caller import LLMCaller
+from core.supabase_client import save_memory
+from core.project_objective import read_objective, write_objective
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("ws_server")
@@ -211,7 +214,7 @@ def ws(ws):
     try:
         nexo = NexoGenesisAgent()
         agents['NexoGenesis'] = nexo
-        register_agent('NexoGenesis', {'status': 'active'})
+        register_agent('NexoGenesis', {'status': 'active', 'last_seen': datetime.utcnow().isoformat()})
         logger.info("Agente NexoGenesis inicializado com sucesso.")
     except Exception as e:
         logger.error(f"Falha ao inicializar NexoGenesis: {e}")
@@ -221,7 +224,7 @@ def ws(ws):
     try:
         eco = EcoFinanceAgent()
         agents['EcoFinance'] = eco
-        register_agent('EcoFinance', {'status': 'active'})
+    register_agent('EcoFinance', {'status': 'active', 'last_seen': datetime.utcnow().isoformat()})
         logger.info("Agente EcoFinance inicializado com sucesso.")
     except Exception as e:
         logger.error(f"Falha ao inicializar EcoFinance: {e}")
@@ -231,7 +234,7 @@ def ws(ws):
     try:
         api_opt = APIcreditOptimizer()
         agents['APIcreditOptimizer'] = api_opt
-        register_agent('APIcreditOptimizer', {'status': 'active'})
+    register_agent('APIcreditOptimizer', {'status': 'active', 'last_seen': datetime.utcnow().isoformat()})
         logger.info("Agente APIcreditOptimizer inicializado com sucesso.")
     except Exception as e:
         logger.error(f"Falha ao inicializar APIcreditOptimizer: {e}")
@@ -255,6 +258,17 @@ def ws(ws):
                         api_keys_mem.pop(idx)
         except Exception:
             # ignore timeouts/disconnects
+            pass
+
+        # Update last_seen for active agents
+        try:
+            for name, a in agents.items():
+                try:
+                    a_status = a.get_status() if hasattr(a, 'get_status') else {}
+                    update_agent(name, {'status': 'active', 'last_seen': datetime.utcnow().isoformat(), 'details': a_status})
+                except Exception:
+                    update_agent(name, {'status': 'error', 'last_seen': datetime.utcnow().isoformat()})
+        except Exception:
             pass
 
         # Monitor visual simplificado
@@ -307,6 +321,51 @@ def ws(ws):
         ws.send(json.dumps({"type": "config", "config": config_html, "api_keys": api_keys_mem}))
 
         time.sleep(2)
+
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    data = request.get_json(silent=True) or {}
+    message = data.get('message')
+    if not message:
+        return make_response(jsonify({'error': 'missing_message'}), 400)
+
+    cfg = {
+        'gemini_api_key': os.environ.get('GEMINI_API_KEY'),
+        'openai_api_key': os.environ.get('OPENAI_API_KEY'),
+        'groq_api_key': os.environ.get('GROQ_API_KEY')
+    }
+    caller = LLMCaller(cfg)
+    try:
+        reply = caller.call(message, model=os.environ.get('NEXO_LLM_PROVIDER', 'auto'))
+    except Exception as e:
+        logger.error(f'LLM error: {e}')
+        reply = "Desculpe, não consegui gerar uma resposta no momento."
+
+    try:
+        save_memory('chat', {'message': message, 'reply': reply})
+    except Exception:
+        logger.exception('Falha ao persistir chat')
+
+    return jsonify({'reply': reply})
+
+
+@app.route('/objective', methods=['GET'])
+def get_objective():
+    obj = read_objective()
+    if not obj:
+        return jsonify({'objective': None}), 200
+    return jsonify({'objective': obj}), 200
+
+
+@app.route('/objective', methods=['POST'])
+def post_objective():
+    data = request.get_json(silent=True) or {}
+    text = data.get('text')
+    if not text:
+        return make_response(jsonify({'error': 'missing_text'}), 400)
+    payload = write_objective(text)
+    return jsonify({'saved': payload}), 201
 
 
 
