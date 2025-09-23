@@ -7,6 +7,8 @@ import os
 import logging
 from typing import Optional, Callable, List, Dict, Any
 
+from .supabase_client import save_log
+
 logger = logging.getLogger("llm_fallback")
 
 
@@ -29,19 +31,21 @@ def available_providers() -> List[str]:
 
 
 def select_provider(preferred: Optional[str] = None) -> Optional[str]:
-    """Retorna o nome de um provedor disponível, respeitando preferência se possível."""
     providers = available_providers()
     if preferred and preferred in providers:
         return preferred
     return providers[0] if providers else None
 
 
-def call_with_fallback(prompt: str, model: Optional[str] = None, timeout: int = 20, preferred: Optional[str] = None, **kwargs) -> Dict[str, Any]:
-    """Tenta chamar provedores em ordem, retornando o primeiro sucesso.
+def _record_fallback_event(prev_provider: Optional[str], tried_provider: str, reason: str):
+    try:
+        save_log('warning', f'LLM fallback: {prev_provider} -> {tried_provider}', {'reason': reason})
+    except Exception:
+        logger.debug('Não foi possível salvar fallback no Supabase.')
 
-    Retorna dict: { 'provider': name, 'response': text }
-    Em falha, retorna {'provider': None, 'response': 'error: ...'}
-    """
+
+def call_with_fallback(prompt: str, model: Optional[str] = None, timeout: int = 20, preferred: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    """Tenta chamar provedores em ordem, retornando o primeiro sucesso. Registra eventos de fallback no Supabase quando possível."""
     import time
 
     providers = available_providers()
@@ -54,6 +58,7 @@ def call_with_fallback(prompt: str, model: Optional[str] = None, timeout: int = 
         return {"provider": None, "response": "Erro: nenhum provedor LLM configurado."}
 
     last_exc = None
+    prev = None
     for p in providers:
         try:
             logger.info(f"Tentando LLM provider: {p}")
@@ -69,6 +74,7 @@ def call_with_fallback(prompt: str, model: Optional[str] = None, timeout: int = 
                     return {"provider": 'gemini', "response": text}
                 except Exception as e:
                     last_exc = e
+                    _record_fallback_event(prev, 'gemini', str(e))
                     logger.warning(f"Gemini falhou: {e}")
             elif p == 'openai':
                 try:
@@ -80,18 +86,17 @@ def call_with_fallback(prompt: str, model: Optional[str] = None, timeout: int = 
                     return {"provider": 'openai', "response": text}
                 except Exception as e:
                     last_exc = e
+                    _record_fallback_event(prev, 'openai', str(e))
                     logger.warning(f"OpenAI falhou: {e}")
             elif p == 'groq':
                 try:
-                    # groq client import if available
                     import groq
-                    key = os.environ.get('GROQ_API_KEY')
-                    # Exemplo simplificado — adapte conforme lib real
                     model_name = model or os.environ.get('GROQ_MODEL', 'gpt-j')
                     text = groq.generate(prompt)
                     return {"provider": 'groq', "response": text}
                 except Exception as e:
                     last_exc = e
+                    _record_fallback_event(prev, 'groq', str(e))
                     logger.warning(f"GROQ falhou: {e}")
             elif p == 'ollama':
                 try:
@@ -102,10 +107,13 @@ def call_with_fallback(prompt: str, model: Optional[str] = None, timeout: int = 
                     return {"provider": 'ollama', "response": text}
                 except Exception as e:
                     last_exc = e
+                    _record_fallback_event(prev, 'ollama', str(e))
                     logger.warning(f"Ollama falhou: {e}")
         except Exception as e:
             last_exc = e
+            _record_fallback_event(prev, p, str(e))
             logger.warning(f"Provider {p} erro inesperado: {e}")
+        prev = p
 
     logger.error(f"Todos provedores falharam. Último erro: {last_exc}")
     return {"provider": None, "response": f"Erro: todos provedores falharam. Último: {last_exc}"}

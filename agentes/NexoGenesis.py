@@ -480,11 +480,22 @@ def auto_update_agent(code_path: str):
     """
     Recebe um código de agente novo, roda testes e só ativa se passar.
     """
-    success, logs = run_tests()
-    save_log("INFO", f"Validação de agente {code_path}: {success}")
-    if success:
-        # lógica para mover/ativar agente
-        return {"status": "aprovado", "logs": logs}
-    else:
-        return {"status": "reprovado", "logs": logs}
+    # Usa o sandbox runner para isolar testes de código gerado
+    try:
+        from tooling.sandbox_runner import run_tests_in_sandbox
+        res = run_tests_in_sandbox(code_path)
+        success = res.get('success', False)
+        log_path = res.get('log_path')
+        try:
+            from core.supabase_client import save_log
+            save_log('info', f'Validação de agente {code_path}: {success}', {'log_path': log_path})
+        except Exception:
+            pass
+        if success:
+            return {"status": "aprovado", "logs": log_path}
+        else:
+            return {"status": "reprovado", "logs": log_path}
+    except Exception as e:
+        logger.error(f"Erro ao validar agente em sandbox: {e}")
+        return {"status": "erro", "error": str(e)}
 
