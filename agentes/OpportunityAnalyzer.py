@@ -1,4 +1,3 @@
-```python
 import os
 from typing import Dict, List, Any
 
@@ -70,4 +69,3 @@ class OpportunityAnalyzer(Agent):
             return f"Erro na execução: {e}"
 
 
-```

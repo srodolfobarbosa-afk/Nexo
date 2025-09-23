@@ -232,13 +232,9 @@ class EvolutionModule:
         try:
             response = self.nexo.call_llm(prompt, "Identificar oportunidades de evolução")
             
-            # Limpar resposta para extrair JSON
-            if response.strip().startswith("```json"):
-                response = response.strip()[7:-3].strip()
-            elif response.strip().startswith("```"):
-                response = response.strip()[3:-3].strip()
-            
-            opportunities = json.loads(response)
+            # Extrair JSON de forma robusta
+            from core.json_utils import extract_json
+            opportunities = extract_json(response)
             
             # Filtrar apenas oportunidades de alta e média prioridade
             return [op for op in opportunities if op.get("priority") in ["high", "medium"]]

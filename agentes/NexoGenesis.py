@@ -91,19 +91,37 @@ class NexoGenesisAgent:
         # Manter a inicialização original do Supabase via get_supabase_client()
 
         self.supabase = get_supabase_client()
+        if not self.supabase:
+            logging.warning("Supabase não inicializado. Algumas funcionalidades ficarão limitadas.")
         self.gemini_api_key = os.environ.get("GEMINI_API_KEY")
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
-        self.search_module = InternetSearchModule() # Mantenha por enquanto
-        self.web_agent = WebAgent() # Novo WebAgent
-        logging.info("🌐 Agente de navegação web (Playwright) ativo.")
+        try:
+            self.search_module = InternetSearchModule() # Mantenha por enquanto
+        except Exception:
+            self.search_module = None
+            logging.warning("InternetSearchModule indisponível.")
+        try:
+            self.web_agent = WebAgent() # Novo WebAgent
+            logging.info("🌐 Agente de navegação web (Playwright) ativo.")
+        except Exception:
+            self.web_agent = None
+            logging.warning("WebAgent indisponível.")
         self.groq_api_key = os.environ.get("GROQ_API_KEY")
         self.llm_provider = os.environ.get("NEXO_LLM_PROVIDER", "google")
 
         # Inicializar módulos de auto-construção, automação web e memória vetorial
         from core.vector_memory import VectorMemory
         self.vector_memory = VectorMemory()
-        self.auto_constructor = AutoConstructionModule(self.call_llm)
-        self.evolution_module = EvolutionModule(self)
+        try:
+            self.auto_constructor = AutoConstructionModule(self.call_llm)
+        except Exception:
+            self.auto_constructor = None
+            logging.warning("AutoConstructionModule indisponível.")
+        try:
+            self.evolution_module = EvolutionModule(self)
+        except Exception:
+            self.evolution_module = None
+            logging.warning("EvolutionModule indisponível.")
         self.sentiment_analyzer = SentimentIntensityAnalyzer()
 
         # Estrutura inicial de personalidade dinâmica

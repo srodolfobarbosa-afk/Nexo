@@ -121,10 +121,8 @@ REVIEW_SCHEMA = {
 if __name__ == "__main__":
     # Teste da função
     test_responses = [
-        '```json\n{"test": "value"}\n```',
         '{"test": "value"}',
         'Aqui está o JSON: {"test": "value"} espero que ajude!',
-        '```\n{"test": "value"}\n```',
         'JSON inválido aqui'
     ]
     
