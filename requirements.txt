@@ -28,6 +28,8 @@ ollama>=0.1
 # Vector DB / Embeddings
 langchain>=0.2
 chromadb>=0.3
+sentence-transformers>=2.2
+faiss-cpu>=1.7
 
 # NLP / scraping
 beautifulsoup4>=4.12
