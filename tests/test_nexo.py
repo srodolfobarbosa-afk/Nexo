@@ -1,9 +1,12 @@
 import pytest
-import requests
 
-BASE_URL = "http://localhost:5000"
+from src.ws_server import app
+
 
 def test_health_check():
-    r = requests.get(f"{BASE_URL}/status")
+    # Usa o Flask test client para não requerer servidor externo
+    client = app.test_client()
+    r = client.get('/status')
     assert r.status_code == 200
-    assert "status" in r.json()
+    data = r.get_json()
+    assert data and 'status' in data

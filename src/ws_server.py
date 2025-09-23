@@ -26,6 +26,19 @@ sock = Sock(app)
 def home():
     return send_from_directory(app.static_folder, "index.html")
 
+
+@app.route('/status')
+def status():
+    """Health check simples do serviço e dos principais componentes."""
+    status_info = {
+        "status": "ok",
+        "supabase": bool(get_supabase_client()),
+        "agents_loaded": [k for k in [
+            'NexoGenesis', 'EcoFinance', 'APIcreditOptimizer'
+        ]]
+    }
+    return (json.dumps(status_info), 200, {'Content-Type': 'application/json'})
+
 @sock.route('/ws')
 def ws(ws):
     # Instanciar agentes reais (tolerante a falhas individuais)
