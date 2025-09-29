@@ -24,6 +24,7 @@ import logging
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from core.database import get_supabase_client
 from core.agent_registry import register_agent, get_agents
+from core.agent_loader import discover_and_register_all
 from core.jwt_auth import create_token, verify_token, require_jwt
 from core.mission_runner import start_background
 from core import sqlite_client
@@ -40,9 +41,8 @@ sock = Sock(app)
 
 # Registrar agentes iniciais em estado 'idle' para exponibilizar via API sem conexão WS
 try:
-    register_agent('NexoGenesis', {'status': 'idle'})
-    register_agent('EcoFinance', {'status': 'idle'})
-    register_agent('APIcreditOptimizer', {'status': 'idle'})
+    # discover and register agents dynamically
+    discover_and_register_all()
 except Exception:
     # não falhar se o registrador estiver indisponível
     pass
@@ -209,9 +209,15 @@ def ws(ws):
     agents = {}
 
     try:
+        # prefer instantiation only if class is available
+        from agentes.eco_genesis import EcoGenesis as NexoGenesisAgent
         nexo = NexoGenesisAgent()
         agents['NexoGenesis'] = nexo
-        register_agent('NexoGenesis', {'status': 'active'})
+        try:
+            from core.agent_registry import register_agent_instance
+            register_agent_instance(nexo, {'status': 'active'})
+        except Exception:
+            register_agent('NexoGenesis', {'status': 'active'})
         logger.info("Agente NexoGenesis inicializado com sucesso.")
     except Exception as e:
         logger.error(f"Falha ao inicializar NexoGenesis: {e}")
@@ -221,7 +227,11 @@ def ws(ws):
     try:
         eco = EcoFinanceAgent()
         agents['EcoFinance'] = eco
-        register_agent('EcoFinance', {'status': 'active'})
+        try:
+            from core.agent_registry import register_agent_instance
+            register_agent_instance(eco, {'status': 'active'})
+        except Exception:
+            register_agent('EcoFinance', {'status': 'active'})
         logger.info("Agente EcoFinance inicializado com sucesso.")
     except Exception as e:
         logger.error(f"Falha ao inicializar EcoFinance: {e}")
@@ -231,7 +241,11 @@ def ws(ws):
     try:
         api_opt = APIcreditOptimizer()
         agents['APIcreditOptimizer'] = api_opt
-        register_agent('APIcreditOptimizer', {'status': 'active'})
+        try:
+            from core.agent_registry import register_agent_instance
+            register_agent_instance(api_opt, {'status': 'active'})
+        except Exception:
+            register_agent('APIcreditOptimizer', {'status': 'active'})
         logger.info("Agente APIcreditOptimizer inicializado com sucesso.")
     except Exception as e:
         logger.error(f"Falha ao inicializar APIcreditOptimizer: {e}")

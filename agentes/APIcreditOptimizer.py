@@ -13,6 +13,11 @@ class APIcreditOptimizer:
         self.supabase = get_supabase_client()
         logger.info("🔎 APIcreditOptimizer inicializado.")
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.supabase = get_supabase_client()
+        logger.info("🔎 APIcreditOptimizer inicializado.")
+
     def analyze_usage(self):
         """
         Analisa o uso de créditos no Supabase e retorna recomendações.
@@ -84,3 +89,13 @@ class APIcreditOptimizer:
             logger.info(f"Ação registrada: {action}")
         except Exception as e:
             logger.error(f"Erro ao salvar log de ação: {e}")
+
+    def handle(self, payload=None):
+        """Wrapper compatível: retorna resumo simples de uso/otimização."""
+        try:
+            summary = self.analyze_usage()
+            suggestions = self.suggest_optimization()
+            return {"agent": self.name if hasattr(self, 'name') else 'APIcreditOptimizer', "summary": summary, "suggestions": suggestions}
+        except Exception as e:
+            logger.error(f"Erro no handle do APIcreditOptimizer: {e}")
+            return {"error": str(e)}

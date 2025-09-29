@@ -17,6 +17,21 @@ def register_agent(name: str, meta: dict = None):
         logger.info(f'Agent registered: {name}')
 
 
+def register_agent_instance(agent, meta: dict = None):
+    """Registra uma instância de agente (preferencialmente AgentBase).
+
+    Aceita qualquer objeto com atributo `name` e opcional `to_dict()`.
+    """
+    try:
+        name = getattr(agent, 'name', agent.__class__.__name__)
+        info = meta or {}
+        if hasattr(agent, 'to_dict'):
+            info['meta'] = agent.to_dict()
+        register_agent(name, info)
+    except Exception as e:
+        logger.error(f'Falha ao registrar instância de agente: {e}')
+
+
 def unregister_agent(name: str):
     with _lock:
         if name in _agents:

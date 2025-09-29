@@ -1,8 +1,12 @@
-class Memory:
-    def __init__(self):
+from core.agent_base import AgentBase
+
+
+class Memory(AgentBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.name = 'Memory'
         from core.api_search import APISearch
         self.api_search = APISearch()
 
-    def falar(self, problema):
-        return f"Memory analisou: {problema}"
+    def handle(self, problema):
+        return {"agent": self.name, "input": problema, "result": f"Memory analisou: {problema}"}
