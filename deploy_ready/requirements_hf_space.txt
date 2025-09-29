@@ -1,0 +1,5 @@
+gradio==3.40.1
+transformers==4.34.0
+torch
+sentencepiece
+requests

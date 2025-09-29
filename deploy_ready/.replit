@@ -1,0 +1,2 @@
+run = "python app_hf_space.py"
+language = "python"
