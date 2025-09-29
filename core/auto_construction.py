@@ -42,11 +42,21 @@ class AutoConstructionModule:
 import os
 import json
 import subprocess
+import logging
+from typing import Any, Dict
 from datetime import datetime
 from dotenv import load_dotenv
 from core.database import get_supabase_client
 from core.internet_search import InternetSearchModule
-from core.json_utils import extract_json, safe_json_response, create_json_prompt, ARCHITECTURE_SCHEMA, CODE_IMPLEMENTATION_SCHEMA, REVIEW_SCHEMA
+from core.json_utils import (
+    extract_json,
+    safe_json_response,
+    create_json_prompt,
+    ARCHITECTURE_SCHEMA,
+    CODE_IMPLEMENTATION_SCHEMA,
+    REVIEW_SCHEMA,
+    MISSION_INTERPRETATION_SCHEMA,
+)
 from core.github_integration import GitHubIntegration
 
 load_dotenv()
@@ -63,6 +73,80 @@ class AutoConstructionModule:
         self.github = GitHubIntegration()
         self.llm_caller = llm_caller  # Referência para chamar LLMs
         self.construction_history = []
+
+    def build_meta_prompt(self, context: str, objective: str) -> str:
+        """
+        Constrói o meta-prompt de auto-construção usando o template definido pelo usuário.
+        Retorna o texto pronto para ser enviado ao LLM.
+        """
+        template = """
+## Meta-Prompt de Auto-Construção para o NexoGênesis
+
+Instrução: Assuma o papel de NexoGênesis, o Agente Orquestrador. Sua missão é executar um ciclo de Auto-Construção Avançada para aprimorar sua própria funcionalidade ou a de um agente subordinado, visando cumprir uma nova exigência do usuário ou corrigir uma falha de desempenho.
+
+1. Análise da Missão e Contexto
+
+Contexto Atual do Usuário/Sistema:
+{context}
+
+Objetivo de Auto-Construção:
+{objective}
+
+2. Plano de Ação Estruturado
+
+Gere um plano de execução detalhado em formato JSON seguindo o esquema de interpretação de missões. O plano deve cobrir Diagnóstico, Geração de Código (arquivos a criar/modificar e o conteúdo), Testes (plano e/ou trechos de teste), Integração e Deploy.
+
+3. Diretrizes de Execução
+
+Ferramentas Disponíveis: InternetSearchModule, AutoConstructionModule, get_supabase_client().
+Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSION_INTERPRETATION_SCHEMA.
+
+""".strip()
+
+        return template.format(context=context, objective=objective)
+
+    def auto_construct_from_meta(self, context: str, objective: str, allow_deploy: bool = False) -> Dict[str, Any]:
+        """
+        Wrapper que usa o meta-prompt para obter uma interpretação de missão do LLM.
+        Se o LLM indicar `use_auto_construction: true` (ou equivalente), e `allow_deploy` for True,
+        este método encaminhará para `auto_construct_feature` com o objetivo final.
+        Retorna o JSON interpretado e, se aplicável, o resultado da construção automática.
+        """
+        try:
+            logging.info("🔧 Construindo meta-prompt para auto-construção")
+            prompt_text = self.build_meta_prompt(context, objective)
+
+            # Envolver o prompt para forçar JSON conforme schema
+            wrapped_prompt = create_json_prompt(prompt_text, MISSION_INTERPRETATION_SCHEMA)
+
+            logging.info("📨 Chamando LLM para interpretar missão...")
+            llm_response = self.llm_caller(wrapped_prompt, objective)
+
+            interpreted = safe_json_response(llm_response, fallback_response={
+                "action": "clarify",
+                "agent_name": None,
+                "description": "Falha na interpretação automática",
+                "requirements": [],
+                "response": llm_response[:500] if isinstance(llm_response, str) else str(llm_response),
+                "use_auto_construction": False
+            })
+
+            result: Dict[str, Any] = {"interpreted_mission": interpreted}
+
+            # Se o LLM indicar que devemos usar auto-construction e estamos autorizados
+            if interpreted.get("use_auto_construction") and interpreted.get("action") in ("auto_construct", "create_agent"):
+                if allow_deploy:
+                    logging.info("🚀 Execução autorizada: iniciando auto_construct_feature")
+                    construction_result = self.auto_construct_feature(objective)
+                    result["construction_result"] = construction_result
+                else:
+                    logging.info("⚠️ Auto-construction requisitado mas 'allow_deploy' está False. Não executando.")
+                    result["note"] = "Auto-construction requisitado pelo LLM, mas allow_deploy=False"
+
+            return result
+        except Exception as e:
+            logging.exception("Erro em auto_construct_from_meta")
+            return {"error": str(e)}
     
     def auto_construct_feature(self, feature_request):
         """
