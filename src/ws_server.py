@@ -209,8 +209,7 @@ def ws(ws):
     agents = {}
 
     try:
-        # prefer instantiation only if class is available
-        from agentes.eco_genesis import EcoGenesis as NexoGenesisAgent
+        # Instanciar o NexoGenesis usando a classe importada no topo do arquivo
         nexo = NexoGenesisAgent()
         agents['NexoGenesis'] = nexo
         try:

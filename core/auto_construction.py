@@ -432,12 +432,13 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
             
             # 3. Operações Git (se em repositório)
             try:
-                # Add arquivos ao git
-                subprocess.run("git add .", shell=True, cwd="/home/ubuntu/Nexo")
+                # Add arquivos ao git (usa diretório do repositório atual)
+                repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+                subprocess.run("git add .", shell=True, cwd=repo_root)
                 
                 # Commit
                 commit_message = f"Auto-construção: {architecture.get('overview', 'Nova funcionalidade')}"
-                subprocess.run(f'git commit -m "{commit_message}"', shell=True, cwd="/home/ubuntu/Nexo")
+                subprocess.run(f'git commit -m "{commit_message}"', shell=True, cwd=repo_root)
                 
                 deployment_result["git_operations"].append("commit")
                 logging.info("✅ Commit realizado")
