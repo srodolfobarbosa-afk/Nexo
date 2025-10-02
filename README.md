@@ -89,6 +89,32 @@ AUTO_CONSTRUCTION_ALLOW_DEPLOY=0
 
 Use `AUTO_CONSTRUCTION_ALLOW_DEPLOY=1` somente após revisões manuais e com chaves de GitHub/Deploy seguras.
 
+### Revisando e aplicando staged builds
+
+Quando o sistema gera mudanças em modo STAGING, os artefatos são salvos em `autoconstruct_staging/<staged_id>/`.
+
+1. Liste builds staged via endpoint (rodando localmente):
+
+```
+curl http://127.0.0.1:5000/admin/staged_builds
+```
+
+2. Revise o diretório `autoconstruct_staging/<staged_id>/` e cheque `meta.json`.
+
+3. Para aplicar um staged build (copiar arquivos para o repositório e opcionalmente commitar), execute:
+
+```
+curl -X POST "http://127.0.0.1:5000/admin/apply_staged/<staged_id>" -H "X-ADMIN-TOKEN: $ADMIN_DEPLOY_TOKEN"
+```
+
+Certifique-se de setar `ADMIN_DEPLOY_TOKEN` no ambiente (ou em `secrets` no GitHub Actions) antes de aplicar.
+
+### Configurar GitHub Actions secrets
+
+- `GITHUB_TOKEN` — já disponibilizado automaticamente em Actions; usado para criar PRs.
+- `ADMIN_DEPLOY_TOKEN` — token simples para proteger o endpoint admin; configure em Settings > Secrets no GitHub.
+
+
 
 
 ## Supabase Auth (recommended for production)
