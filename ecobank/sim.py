@@ -1,6 +1,11 @@
 """Simulador EcoBank - gera receitas simuladas e mantém um ledger em memória/arquivo.
 Modo seguro: por padrão opera em SIMULATE e grava em autoconstruct_staging/ecobank for inspection.
 """
+# EcoBank helper - ledger and provider abstraction.
+# By default this module will NOT simulate or perform real transactions unless
+# explicitly configured via environment variables. This prevents accidental
+# financial operations. To enable a provider set ECON_BANK_PROVIDER and
+# related credentials in environment variables.
 import os
 import json
 from datetime import datetime
@@ -56,10 +61,18 @@ def add_transaction(account_id, amount, description=''):
 
 
 def simulate_revenue(account_id, base=100.0, factor=1.0):
-    # simples: gera uma receita randômica baseada no timestamp
-    import time, math
-    revenue = base * (1 + math.sin(time.time() / 3600.0)) * factor
-    return add_transaction(account_id, revenue, description='simulated_revenue')
+def provider_add_transaction(account_id, amount, description=''):
+    """If a provider is configured (ECON_BANK_PROVIDER), attempt to execute
+    a real transaction via the provider's integration. Otherwise raise an error
+    to prevent accidental real financial operations.
+    """
+    provider = os.environ.get('ECON_BANK_PROVIDER')
+    if not provider:
+        raise RuntimeError('No ECON_BANK_PROVIDER configured. Refuse to perform real transactions.')
+
+    # Placeholder: implement provider integration here.
+    # Example: if provider == 'example': call provider API using credentials from env.
+    raise NotImplementedError(f'Provider integration for "{provider}" not implemented. Configure a provider or use offline ledger operations.')
 
 
 def list_transactions(limit=50):
