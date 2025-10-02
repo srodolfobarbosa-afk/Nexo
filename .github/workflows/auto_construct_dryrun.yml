@@ -1,0 +1,36 @@
+name: Auto-Construct Dry-Run
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # a cada 30 minutos (ajuste conforme necessário)
+  workflow_dispatch:
+
+jobs:
+  dryrun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      - name: Install minimal deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || true
+      - name: Run auto-construction dry-run
+        env:
+          ADMIN_DEPLOY_TOKEN: ${{ secrets.ADMIN_DEPLOY_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python scripts/run_auto_construct_dryrun.py || true
+      - name: Create PR from staging (if changes)
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Auto-construct: staged changes
+          branch: auto-construct/staged-${{ github.run_id }}
+          title: "Auto-construct: staged changes ${{ github.run_id }}"
+          body: |-
+            Dry-run auto-construction generated staged changes. Review before applying.
+          base: autonomy/bootstrap
