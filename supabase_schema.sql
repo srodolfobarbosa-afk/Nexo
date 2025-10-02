@@ -1,3 +1,104 @@
+-- Supabase schema skeleton for Nexo / EcoGuardians
+-- Use this file to initialize your Supabase DB (psql or Supabase SQL editor).
+-- WARNING: Review policies and secrets before running in production.
+
+-- Enable pgvector extension (if using pgvector)
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Agents table
+CREATE TABLE IF NOT EXISTS agents (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  persona jsonb,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Tasks / missions (short lived)
+CREATE TABLE IF NOT EXISTS tasks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner text, -- JWT sub or service
+  title text,
+  payload jsonb,
+  status text DEFAULT 'pending',
+  created_at timestamptz DEFAULT now()
+);
+
+-- Memories - short term (fast writes)
+CREATE TABLE IF NOT EXISTS memories_short (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner text,
+  key text,
+  data jsonb,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Memories - long term (archival)
+CREATE TABLE IF NOT EXISTS memories_long (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner text,
+  summary text,
+  data jsonb,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Vector embeddings (pgvector)
+CREATE TABLE IF NOT EXISTS embeddings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner text,
+  doc_id text,
+  embedding vector(1536), -- adjust dimension to your model
+  metadata jsonb,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Agent audit logs (append-only)
+CREATE TABLE IF NOT EXISTS agent_audit (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  agent_id uuid,
+  event_type text,
+  details jsonb,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Example RLS policies
+-- Note: replace 'auth.role()' checks with your project's logic (Supabase provides 'auth.uid()' etc.)
+
+-- Enable row level security on tasks and memories
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE memories_short ENABLE ROW LEVEL SECURITY;
+ALTER TABLE memories_long ENABLE ROW LEVEL SECURITY;
+
+-- Policy: allow users to insert/select their own rows if owner matches jwt sub
+CREATE POLICY "tasks_owner_policy" ON tasks
+  FOR ALL
+  USING (owner = current_setting('jwt.claims.sub', true))
+  WITH CHECK (owner = current_setting('jwt.claims.sub', true));
+
+CREATE POLICY "memories_short_owner_policy" ON memories_short
+  FOR ALL
+  USING (owner = current_setting('jwt.claims.sub', true))
+  WITH CHECK (owner = current_setting('jwt.claims.sub', true));
+
+CREATE POLICY "memories_long_owner_policy" ON memories_long
+  FOR ALL
+  USING (owner = current_setting('jwt.claims.sub', true))
+  WITH CHECK (owner = current_setting('jwt.claims.sub', true));
+
+-- Agent audit: allow inserts from service role only (no public read)
+ALTER TABLE agent_audit ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "agent_audit_insert_service_only" ON agent_audit
+  FOR INSERT
+  USING (current_setting('is_service_role', true) = '1')
+  WITH CHECK (current_setting('is_service_role', true) = '1');
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_embeddings_docid ON embeddings(doc_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_owner ON tasks(owner);
+
+-- Notes:
+-- 1) Supabase uses JWT claims; set 'jwt.claims.sub' or adapt policies to 'auth.uid()' as appropriate.
+-- 2) To run with Supabase, open your project SQL editor and run this file.
+-- 3) Review and tighten policies before production; consider using service_role key only for server-side operations.
 -- Supabase Schema para Nexo (produção)
 
 -- Tabela de agentes

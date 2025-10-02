@@ -23,6 +23,28 @@ def status():
         "notes":"API mínima criada. Substitua por sua aplicação real."
     })
 
+
+@app.route('/ecobank/balance/<account_id>')
+def ecobank_balance(account_id):
+    try:
+        from ecobank.sim import get_balance
+        return jsonify({'account_id': account_id, 'balance': get_balance(account_id)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/ecobank/simulate/<account_id>', methods=['POST'])
+def ecobank_simulate(account_id):
+    # Somente em modo simulate para evitar transações reais acidentais
+    if str(os.environ.get('FIN_SIMULATE', '1')).lower() not in ('1', 'true', 'yes'):
+        return jsonify({'error': 'FIN_SIMULATE disabled'}), 403
+    try:
+        from ecobank.sim import simulate_revenue
+        tx = simulate_revenue(account_id)
+        return jsonify(tx)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == "__main__":
     # Habilitar loop de auto-evolução em background quando a variável de ambiente
     # START_AUTO_EVOLUTION estiver definida como '1' ou 'true'.
