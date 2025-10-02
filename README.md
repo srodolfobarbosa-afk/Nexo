@@ -22,16 +22,12 @@
 
 ## Quick local / production notes
 
-- DO NOT commit real secrets. Use `.env` (ignored) and a secrets manager in production.
-- Build the Docker image (example):
 
 	docker build -t nexo:latest .
 
-- Run (development):
 
 	docker run --env-file .env -p 8000:8000 nexo:latest
 
-- CI: GitHub Actions runs tests and a secrets scan. Ensure you rotate any compromised keys before pushing.
 
 ## Rodando no Replit
 
@@ -43,9 +39,6 @@ Passos rápidos para colocar o projeto no Replit:
 4. Clique em Run. O Replit irá criar o virtualenv, instalar dependências (pode demorar) e iniciar o Gunicorn servindo `src.main:app`.
 
 Notas:
-- Se você prefere desenvolvimento sem Gunicorn, altere `run_replit.sh` para executar `python3 src/main.py`.
-- Replit tem limites de CPU/memória; use poucos workers/threads no Gunicorn (o script padrão usa 1 worker).
-- Para rodar o WebSocket (`src/ws_server.py`) em paralelo no Replit pode ser necessário criar outro repl ou adaptar o processo para múltiplas threads — o Replit tradicional roda apenas um processo web por repl.
 
 Se você já tem uma instância rodando (ex.: https://nexo-kh57.onrender.com), pode apontar serviços externos para essa URL durante testes.
 
@@ -61,14 +54,9 @@ USE_SUPABASE_AUTH=0
 
 Se ocorrerem erros durante a instalação de dependências pesadas (faiss, playwright, modelos grandes), considere:
 
-- Comentar linhas problemáticas em `requirements.txt` temporariamente
-- Usar a opção de desenvolvimento: executar `python3 src/main.py` ao invés de gunicorn para evitar problemas de instalação
-- Dar boot apenas na API mínima (`src/main.py`) e conectar o bot/serviços externos a essa URL
 
 Problemas comuns no Replit:
 
-- Timeouts de build (instalação de dependências demoradas) — use `pip install -r requirements.txt || true` no script de start (já aplicado)
-- Falta de libs de sistema (ex: faiss precisa de compilação) — remova temporariamente ou use dependências pré-compiladas
 
 ## Ativando Auto-Construção / Auto-Evolução (autonomia)
 
@@ -77,8 +65,6 @@ Ative com cautela — isso dá autonomia ao sistema e pode executar commits ou d
 
 Variáveis de ambiente relevantes:
 
-- `START_AUTO_EVOLUTION=1` ou `START_AUTO_CONSTRUCTION=1` — inicia o loop `auto_evolution_loop` em background no processo web.
-- `AUTO_CONSTRUCTION_ALLOW_DEPLOY=1` — (não implementa automaticamente commits) flag sugerida para permitir que o AutoConstructionModule realize deploys automáticos; use apenas em ambientes controlados.
 
 Para habilitar no Replit/Render, adicione no seu `.env` ou nas variáveis de ambiente do serviço:
 
@@ -111,8 +97,6 @@ Certifique-se de setar `ADMIN_DEPLOY_TOKEN` no ambiente (ou em `secrets` no GitH
 
 ### Configurar GitHub Actions secrets
 
-- `GITHUB_TOKEN` — já disponibilizado automaticamente em Actions; usado para criar PRs.
-- `ADMIN_DEPLOY_TOKEN` — token simples para proteger o endpoint admin; configure em Settings > Secrets no GitHub.
 
 
 
