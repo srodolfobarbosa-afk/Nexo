@@ -402,50 +402,85 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
                 "status": "success"
             }
             # 1. Criar/modificar arquivos
+            # Se deploy automático estiver desabilitado, colocamos em staging
+            allow_deploy = str(os.environ.get('AUTO_CONSTRUCTION_ALLOW_DEPLOY', '0')).lower() in ('1', 'true', 'yes')
+            repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+            staged_id = None
+            if not allow_deploy:
+                # Criar pasta de staging com timestamp
+                staged_id = f"build_{int(datetime.now().timestamp())}"
+                staging_root = os.path.join(repo_root, 'autoconstruct_staging', staged_id)
+                os.makedirs(staging_root, exist_ok=True)
+                logging.info(f"🚧 Auto-construction em modo STAGING: {staging_root}")
+
             for file_path, content in code.get("files", {}).items():
                 try:
-                    # Garantir que o diretório existe
-                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                    
-                    # Escrever arquivo
-                    with open(file_path, 'w', encoding='utf-8') as f:
-                        f.write(content)
-                    
-                    deployment_result["files_created"].append(file_path)
-                    logging.info(f"✅ Arquivo criado: {file_path}")
+                    if not allow_deploy:
+                        # Salvar em staging mantendo a estrutura de diretórios
+                        target = os.path.join(staging_root, file_path)
+                        os.makedirs(os.path.dirname(target), exist_ok=True)
+                        with open(target, 'w', encoding='utf-8') as f:
+                            f.write(content)
+                        deployment_result["files_created"].append(target)
+                        logging.info(f"✅ Arquivo STAGED: {target}")
+                    else:
+                        # Deploy direto no repositório
+                        target = os.path.join(repo_root, file_path)
+                        os.makedirs(os.path.dirname(target), exist_ok=True)
+                        with open(target, 'w', encoding='utf-8') as f:
+                            f.write(content)
+                        deployment_result["files_created"].append(target)
+                        logging.info(f"✅ Arquivo criado: {target}")
                 except Exception as e:
                     logging.error(f"❌ Erro ao criar {file_path}: {e}")
             
-            # 2. Executar comandos de instalação
-            for command in code.get("installation_commands", []):
+            # 2. Executar comandos de instalação (somente se permitido)
+            if allow_deploy:
+                for command in code.get("installation_commands", []):
+                    try:
+                        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+                        deployment_result["commands_executed"].append({
+                            "command": command,
+                            "success": result.returncode == 0,
+                            "output": result.stdout,
+                            "error": result.stderr
+                        })
+                        logging.info(f"✅ Comando executado: {command}")
+                    except Exception as e:
+                        logging.error(f"❌ Erro ao executar {command}: {e}")
+            else:
+                deployment_result["staged"] = True
+                deployment_result["staged_id"] = staged_id
+                # salvar metadados de staging
                 try:
-                    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-                    deployment_result["commands_executed"].append({
-                        "command": command,
-                        "success": result.returncode == 0,
-                        "output": result.stdout,
-                        "error": result.stderr
-                    })
-                    logging.info(f"✅ Comando executado: {command}")
-                except Exception as e:
-                    logging.error(f"❌ Erro ao executar {command}: {e}")
+                    meta = {
+                        'staged_id': staged_id,
+                        'feature': architecture.get('overview', 'unknown') if isinstance(globals().get('architecture', None), dict) else None,
+                        'timestamp': datetime.now().isoformat(),
+                        'files': list(code.get('files', {}).keys()),
+                        'installation_commands': code.get('installation_commands', [])
+                    }
+                    meta_path = os.path.join(repo_root, 'autoconstruct_staging', staged_id, 'meta.json')
+                    with open(meta_path, 'w', encoding='utf-8') as mf:
+                        json.dump(meta, mf, ensure_ascii=False, indent=2)
+                except Exception:
+                    pass
             
             # 3. Operações Git (se em repositório)
+            # 3. Operações Git (somente se permitido)
             try:
-                # Add arquivos ao git (usa diretório do repositório atual)
-                repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-                subprocess.run("git add .", shell=True, cwd=repo_root)
-                
-                # Commit
-                commit_message = f"Auto-construção: {architecture.get('overview', 'Nova funcionalidade')}"
-                subprocess.run(f'git commit -m "{commit_message}"', shell=True, cwd=repo_root)
-                
-                deployment_result["git_operations"].append("commit")
-                logging.info("✅ Commit realizado")
+                if allow_deploy:
+                    subprocess.run("git add .", shell=True, cwd=repo_root)
+                    commit_message = f"Auto-construção: {architecture.get('overview', 'Nova funcionalidade')}"
+                    subprocess.run(f'git commit -m "{commit_message}"', shell=True, cwd=repo_root)
+                    deployment_result["git_operations"].append("commit")
+                    logging.info("✅ Commit realizado")
+                else:
+                    logging.info("⚠️ Deploy automático desabilitado; build foi staged e não será commitado automaticamente.")
             except Exception as e:
                 logging.warning(f"⚠️ Operações Git falharam: {e}")
             
-            self._log_construction_step("deployer", architecture["overview"], deployment_result)
+            self._log_construction_step("deployer", architecture.get("overview", "unknown") if isinstance(architecture, dict) else str(architecture), deployment_result)
             return deployment_result
             
         except Exception as e:

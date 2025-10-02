@@ -33,6 +33,64 @@
 
 - CI: GitHub Actions runs tests and a secrets scan. Ensure you rotate any compromised keys before pushing.
 
+## Rodando no Replit
+
+Passos rápidos para colocar o projeto no Replit:
+
+1. Crie um novo repl a partir do repositório GitHub: https://github.com/srodolfobarbosa-afk/Nexo
+2. No Replit, abra o arquivo `.replit` (já presente neste repositório) e garanta que o comando de execução seja `bash run_replit.sh`.
+3. Crie um arquivo `.env` na raiz do repl com as variáveis necessárias (ex: `PORT=5000`, `TELEGRAM_BOT_TOKEN=seu_token`, `SUPABASE_URL=...`, `SUPABASE_KEY=...`).
+4. Clique em Run. O Replit irá criar o virtualenv, instalar dependências (pode demorar) e iniciar o Gunicorn servindo `src.main:app`.
+
+Notas:
+- Se você prefere desenvolvimento sem Gunicorn, altere `run_replit.sh` para executar `python3 src/main.py`.
+- Replit tem limites de CPU/memória; use poucos workers/threads no Gunicorn (o script padrão usa 1 worker).
+- Para rodar o WebSocket (`src/ws_server.py`) em paralelo no Replit pode ser necessário criar outro repl ou adaptar o processo para múltiplas threads — o Replit tradicional roda apenas um processo web por repl.
+
+Se você já tem uma instância rodando (ex.: https://nexo-kh57.onrender.com), pode apontar serviços externos para essa URL durante testes.
+
+Exemplo mínimo de `.env` para rodar no Replit (NÃO coloque chaves reais em repositórios públicos):
+
+```
+PORT=5000
+TELEGRAM_BOT_TOKEN=seu_token_aqui
+SUPABASE_URL=https://xyz.supabase.co
+SUPABASE_KEY=pk.XXXXXXXXXXXXXXXX
+USE_SUPABASE_AUTH=0
+```
+
+Se ocorrerem erros durante a instalação de dependências pesadas (faiss, playwright, modelos grandes), considere:
+
+- Comentar linhas problemáticas em `requirements.txt` temporariamente
+- Usar a opção de desenvolvimento: executar `python3 src/main.py` ao invés de gunicorn para evitar problemas de instalação
+- Dar boot apenas na API mínima (`src/main.py`) e conectar o bot/serviços externos a essa URL
+
+Problemas comuns no Replit:
+
+- Timeouts de build (instalação de dependências demoradas) — use `pip install -r requirements.txt || true` no script de start (já aplicado)
+- Falta de libs de sistema (ex: faiss precisa de compilação) — remova temporariamente ou use dependências pré-compiladas
+
+## Ativando Auto-Construção / Auto-Evolução (autonomia)
+
+O Nexo inclui um loop de "auto-evolution" que pode executar ciclos periódicos de estudo, auto-construção de ferramentas e evolução de agentes.
+Ative com cautela — isso dá autonomia ao sistema e pode executar commits ou deploys se configurado.
+
+Variáveis de ambiente relevantes:
+
+- `START_AUTO_EVOLUTION=1` ou `START_AUTO_CONSTRUCTION=1` — inicia o loop `auto_evolution_loop` em background no processo web.
+- `AUTO_CONSTRUCTION_ALLOW_DEPLOY=1` — (não implementa automaticamente commits) flag sugerida para permitir que o AutoConstructionModule realize deploys automáticos; use apenas em ambientes controlados.
+
+Para habilitar no Replit/Render, adicione no seu `.env` ou nas variáveis de ambiente do serviço:
+
+```
+START_AUTO_EVOLUTION=1
+AUTO_CONSTRUCTION_ALLOW_DEPLOY=0
+```
+
+Use `AUTO_CONSTRUCTION_ALLOW_DEPLOY=1` somente após revisões manuais e com chaves de GitHub/Deploy seguras.
+
+
+
 ## Supabase Auth (recommended for production)
 
 1. Create a Supabase project and enable Auth (OAuth2 / email).

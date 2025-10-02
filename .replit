@@ -1,0 +1,4 @@
+run = "bash run_replit.sh"
+run = "bash run_replit.sh"
+
+# Replit usa este arquivo para saber como iniciar o projeto.
