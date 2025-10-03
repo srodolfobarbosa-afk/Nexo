@@ -1,3 +1,65 @@
+Atualização do Projeto Nexo — Guia rápido
+=========================================
+
+Este documento descreve como configurar, executar e fazer deploy do projeto Nexo
+em um ambiente de desenvolvimento e produção.
+
+1) Requisitos mínimos
+- Python 3.11+ (recomendado 3.12)
+- Git
+- Acesso a um projeto Supabase (opcional para persistência/produção)
+
+2) Preparar ambiente local (dev)
+- Copie o template de variáveis de ambiente e edite os valores sensíveis:
+
+  cp .env.example .env
+  # Edite .env e coloque suas chaves (NUNCA comite .env)
+
+- Crie e ative um virtualenv e instale dependências:
+
+  python3 -m venv .venv
+  source .venv/bin/activate
+  python -m pip install --upgrade pip
+  pip install -r requirements.txt
+
+3) Execução rápida (dev)
+- Testes unitários:
+
+  export PYTHONPATH=$(pwd)
+  pytest -q
+
+- Rodar o sistema integrado em background (script que automatiza venv/install/tests/start):
+
+  ./scripts/auto_run.sh
+
+  Depois veja logs em `logs/integrated.log`:
+
+  tail -f logs/integrated.log
+
+4) Variáveis de ambiente importantes
+- TELEGRAM_BOT_TOKEN — token do bot Telegram (dev/prod)
+- SUPABASE_URL, SUPABASE_KEY — credenciais Supabase (se usar Supabase)
+- JWT_SECRET — segredo forte para tokens JWT (NÃO usar valor padrão)
+
+Observação de segurança: se `JWT_SECRET` estiver ausente ou com o valor padrão placeholder, o processo de inicialização irá falhar com uma mensagem clara. Configure um segredo robusto em produção.
+
+5) Banco/Supabase
+- Há um arquivo `supabase_schema.sql` com esquema sugerido. Para produção, aplique o SQL no seu projeto Supabase. Alguns testes/integrations assumem que certas tabelas existem (tasks, agent_logs, evolution_attempts, etc.).
+
+6) Deploy (Render / Heroku / Docker)
+- O `Dockerfile` e `Procfile` existem como exemplos. Em plataformas como Render, defina variáveis de ambiente seguras (incl. JWT_SECRET) e configure a porta conforme o provedor.
+- Em Render, defina a porta via variável `PORT` e o comando de startup padrão já presente no `Procfile`/`start.sh`.
+
+7) Troubleshooting rápido
+- Erros de schema Supabase: verifique `supabase_schema.sql` e aplique no projeto Supabase (ou pule testes de integração configurando as variáveis).
+- Dependências pesadas (torch/playwright): para desenvolvimento rápido use um `requirements_dev.txt` mais enxuto (opção futura).
+
+8) Próximos passos sugeridos
+- Criar `requirements_dev.txt` para desenvolvimento leve
+- Adicionar CI (GitHub Actions) com testes e linter
+- Criar script/rotina automática para aplicar `supabase_schema.sql` com confirmação interativa
+
+Se quiser que eu implemente algum dos próximos passos, escolha um e eu implemento (uma opção por vez).
 ## Integração Render (Cloud)
 
 Para usar o CloudManager, defina as variáveis de ambiente:

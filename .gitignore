@@ -22,3 +22,9 @@ node_modules/
 # editors
 .vscode/
 .idea/
+nexo_data.db
+.env
+.env.*
+*.db-journal
+logs/
+.venv/

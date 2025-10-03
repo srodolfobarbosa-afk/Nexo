@@ -46,11 +46,11 @@ class VectorMemory:
         metadata = metadata or {}
         doc = Document(page_content=text, metadata=metadata)
         self.store.add_documents([doc])
-        logger.info("Documento adicionado à memória vetorial")
+        logger.info("Document added to vector memory")
 
     def query(self, query_text: str, k: int = 4) -> List[Dict[str, Any]]:
         results = self.store.similarity_search_with_score(query_text, k=k)
-        out = []
+        out: List[Dict[str, Any]] = []
         for doc, score in results:
             out.append({"text": doc.page_content, "metadata": doc.metadata, "score": float(score)})
         return out
@@ -75,9 +75,9 @@ class ChromaVectorMemory:
         doc_id = str(hash(texto))
         self.collection.add(
             embeddings=[embedding],
-            documents=[texto],
+            documents=[text],
             ids=[doc_id],
-            metadatas=[metadados or {}]
+            metadatas=[metadata or {}],
         )
         return doc_id
 

@@ -15,6 +15,14 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # Carregar variáveis de ambiente
 load_dotenv()
 
+# Segurança: exigir JWT_SECRET forte em ambientes onde USE_SUPABASE_AUTH=1
+jwt_secret = os.environ.get('JWT_SECRET')
+use_supabase_auth = os.environ.get('USE_SUPABASE_AUTH', '0')
+if use_supabase_auth in ('1', 'true', 'True'):
+    if not jwt_secret or jwt_secret in ('change_this_secret', 'default_jwt_secret', ''):
+        print("❌ JWT_SECRET ausente ou padrão detectado. Defina uma chave forte em .env ou nas variáveis de ambiente antes de iniciar em produção.")
+        sys.exit(2)
+
 # Configurar logging
 logging.basicConfig(
     level=logging.INFO,

@@ -39,6 +39,13 @@ app = Flask(__name__, static_folder="../app/static", static_url_path="/static")
 CORS(app)
 sock = Sock(app)
 
+# Segurança em runtime: evitar uso de JWT_SECRET padrão quando Supabase Auth estiver ativado
+if os.environ.get('USE_SUPABASE_AUTH', '0') in ('1', 'true', 'True'):
+    jwt_secret = os.environ.get('JWT_SECRET')
+    if not jwt_secret or jwt_secret in ('change_this_secret', 'default_jwt_secret', ''):
+        logger.warning('USING DEFAULT JWT_SECRET OR JWT_SECRET NOT SET while USE_SUPABASE_AUTH=1. This is insecure in production.')
+
+
 # Registrar agentes iniciais em estado 'idle' para exponibilizar via API sem conexão WS
 try:
     # discover and register agents dynamically
@@ -97,9 +104,24 @@ def home():
 @app.route('/status')
 def status():
     """Health check simples do serviço e dos principais componentes."""
+    # Checagem de conectividade com Supabase (pode ser lenta se houver timeout)
+    supabase_client = None
+    supabase_ok = False
+    try:
+        supabase_client = get_supabase_client()
+        if supabase_client:
+            # tentativa simples de listar 1 registro em uma tabela conhecida
+            try:
+                supabase_client.table('agent_error_log').select('id').limit(1).execute()
+                supabase_ok = True
+            except Exception:
+                supabase_ok = False
+    except Exception:
+        supabase_ok = False
+
     status_info = {
         "status": "ok",
-        "supabase": bool(get_supabase_client()),
+        "supabase": supabase_ok,
         "agents_loaded": ['NexoGenesis', 'EcoFinance', 'APIcreditOptimizer']
     }
     return (json.dumps(status_info), 200, {'Content-Type': 'application/json'})
