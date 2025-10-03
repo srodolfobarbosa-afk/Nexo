@@ -1,18 +1,19 @@
 import os
 from github import Github
+from .secrets_provider import get_secret
 
 
 def get_github_client():
-    token = os.environ.get("GITHUB_TOKEN")
+    token = get_secret("GITHUB_TOKEN")
     if not token:
         return None
     return Github(token)
 
 
-def create_branch_and_pr(repo_full_name: str, branch_name: str, file_path: str, content: str, pr_title: str, pr_body: str | None = None):
+def create_branch_and_pr(repo_full_name: str, branch_name: str, file_path: str, content: str, pr_title: str, pr_body: str | None = None, auto_apply: bool = False):
     gh = get_github_client()
-    if gh is None:
-        return {"status": "dry-run", "message": "GITHUB_TOKEN not set; running in dry-run mode."}
+    if gh is None or not auto_apply:
+        return {"status": "dry-run", "message": "GITHUB_TOKEN not set or auto_apply=false; running in dry-run mode."}
 
     repo = gh.get_repo(repo_full_name)
     # create branch from default branch

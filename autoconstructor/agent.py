@@ -11,6 +11,7 @@ class AgentRequest:
     file_content: str
     pr_title: str
     pr_body: str | None = None
+    auto_apply: bool = False
 
 
 def run_agent(req: AgentRequest):
@@ -18,5 +19,5 @@ def run_agent(req: AgentRequest):
     ts = int(time.time())
     branch_name = f"{req.branch_prefix}-{ts}"
     # call github client (will be dry-run if no token provided)
-    result = create_branch_and_pr(req.repo, branch_name, req.file_path, req.file_content, req.pr_title, req.pr_body)
+    result = create_branch_and_pr(req.repo, branch_name, req.file_path, req.file_content, req.pr_title, req.pr_body, auto_apply=req.auto_apply)
     return {"branch": branch_name, "result": result}

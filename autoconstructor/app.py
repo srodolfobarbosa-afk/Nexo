@@ -12,6 +12,7 @@ class Intent(BaseModel):
     file_content: str
     pr_title: str
     pr_body: str | None = None
+    auto_apply: bool = False
 
 
 @app.post("/intents")
@@ -24,6 +25,8 @@ async def handle_intent(intent: Intent):
         file_content=intent.file_content,
         pr_title=intent.pr_title,
         pr_body=intent.pr_body,
+        # auto_apply indicates whether the agent should actually create the PR (requires GITHUB_TOKEN)
+        auto_apply=intent.auto_apply,
     )
     try:
         result = run_agent(req)
