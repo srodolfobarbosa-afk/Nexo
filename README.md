@@ -1,4 +1,4 @@
-# Atualização do Projeto Nexo
+eu QUERO QUERO  faça o NexoGenesis "rodar de verdade" e que o sistema fique vivo, auto-construa e opere automaticamente.# Atualização do Projeto Nexo
 
 ## Instruções de Configuração
 
