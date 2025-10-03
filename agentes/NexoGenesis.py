@@ -110,8 +110,46 @@ class NexoGenesisAgent:
         self.llm_provider = os.environ.get("NEXO_LLM_PROVIDER", "google")
 
         # Inicializar módulos de auto-construção, automação web e memória vetorial
-        from core.vector_memory import VectorMemory
-        self.vector_memory = VectorMemory()
+        # Tentar Chromadb -> LangChain(FAISS) -> fallback in-memory
+        try:
+            from core.vector_memory import ChromadbVectorMemory
+        except Exception:
+            ChromadbVectorMemory = None
+
+        try:
+            from core.vector_memory import VectorMemory
+        except Exception:
+            VectorMemory = None
+
+        self.vector_memory = None
+        if ChromadbVectorMemory is not None:
+            try:
+                self.vector_memory = ChromadbVectorMemory()
+            except Exception:
+                logging.warning("Chromadb vector memory unavailable, trying LangChain/FAISS...")
+
+        if self.vector_memory is None and VectorMemory is not None:
+            try:
+                self.vector_memory = VectorMemory()
+            except Exception:
+                logging.warning("LangChain/FAISS unavailable, using in-memory vector memory fallback.")
+
+        if self.vector_memory is None:
+            # Simple in-memory fallback with minimal API used by the agent
+            class _InMemoryVector:
+                def __init__(self):
+                    self._items = []
+
+                def salvar_ideia(self, texto, metadados=None):
+                    _id = str(len(self._items) + 1)
+                    self._items.append((_id, texto, metadados or {}))
+                    return _id
+
+                def buscar_similaridade(self, consulta, k=3):
+                    # naive fallback: return most recent entries
+                    return [(t, m) for (_id, t, m) in list(reversed(self._items))[:k]]
+
+            self.vector_memory = _InMemoryVector()
         try:
             self.auto_constructor = AutoConstructionModule(self.call_llm)
         except Exception:
