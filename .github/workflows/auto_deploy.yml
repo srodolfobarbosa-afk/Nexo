@@ -1,4 +1,6 @@
 name: Auto Deploy Nexo
+permissions:
+  contents: read
 
 on:
   push:
