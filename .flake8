@@ -1,4 +1,4 @@
 [flake8]
 max-line-length = 120
 extend-ignore = E203, W503
-exclude = .venv, .git, __pycache__, build, dist, .github
+exclude = .venv, venv, venv/*, .git, __pycache__, build, dist, .github, .eggs, env, .env, **/site-packages/*

@@ -20,20 +20,23 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m venv venv
-          source venv/bin/activate
+          # criar virtualenv fora do repositório para evitar que linters analisem 'venv' dentro do repo
+          VENV_DIR="$RUNNER_TEMP/venv"
+          python -m venv "$VENV_DIR"
+          source "$VENV_DIR/bin/activate"
           pip install -r requirements.txt
 
       - name: Install flake8
         run: |
-          source venv/bin/activate
+          source "$RUNNER_TEMP/venv/bin/activate"
           pip install flake8
 
       - name: Run lint
         run: |
-          source venv/bin/activate
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          source "$RUNNER_TEMP/venv/bin/activate"
+          # O virtualenv foi criado em $RUNNER_TEMP; adicionar exclusões adicionais por segurança
+          flake8 . --exclude=venv,.venv,$RUNNER_TEMP --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --exclude=venv,.venv,$RUNNER_TEMP --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Run tests
         run: |
