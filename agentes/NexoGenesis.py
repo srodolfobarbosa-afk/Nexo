@@ -23,7 +23,11 @@ import re
 logging.debug(f'DEBUG: Chave da API do Gemini: {os.getenv("GOOGLE_API_KEY")}')
 
 from typing import Optional
-gemini_api_key = os.getenv("GEMINI_API_KEY")
+from agents.token_manager import TokenManager
+from autoconstructor.llm import generate_text
+
+# Prefer secrets provider via TokenManager
+gemini_api_key = TokenManager.get_token("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
 try:
     if gemini_api_key:
         genai.configure(api_key=gemini_api_key)
@@ -64,7 +68,9 @@ class NexoGenesisAgent:
         import importlib
         pacotes = [
             "supabase", "dotenv", "vaderSentiment", "requests", "ollama", "google.generativeai",
-            "beautifulsoup4", "langchain", "psutil", "flask", "flask_sock"
+            "beautifulsoup4", "langchain", "psutil", "flask", "flask_sock",
+            # do manifesto
+            "transformers", "sentence_transformers", "spacy", "numpy", "pandas", "xgboost", "lightgbm"
         ]
         faltando = []
         for pacote in pacotes:
@@ -93,8 +99,19 @@ class NexoGenesisAgent:
         self.supabase = get_supabase_client()
         if not self.supabase:
             logging.warning("Supabase não inicializado. Algumas funcionalidades ficarão limitadas.")
-        self.gemini_api_key = os.environ.get("GEMINI_API_KEY")
-        self.openai_api_key = os.environ.get("OPENAI_API_KEY")
+        # Use TokenManager to fetch secrets (env or provider)
+        self.gemini_api_key = TokenManager.get_token("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
+        self.openai_api_key = TokenManager.get_token("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
+        self.groq_api_key = TokenManager.get_token("GROQ_API_KEY") or os.environ.get("GROQ_API_KEY")
+        self.tokens = {
+            "gemini": self.gemini_api_key,
+            "openai": self.openai_api_key,
+            "groq": self.groq_api_key,
+            "github": TokenManager.get_token("GITHUB_TOKEN")
+        }
+
+        # Autonomy flag: if any provider token exists, mark agent as autonomous-capable
+        self.autonomy_enabled = any(v for v in self.tokens.values())
         try:
             self.search_module = InternetSearchModule() # Mantenha por enquanto
         except Exception:
@@ -106,8 +123,8 @@ class NexoGenesisAgent:
         except Exception:
             self.web_agent = None
             logging.warning("WebAgent indisponível.")
-        self.groq_api_key = os.environ.get("GROQ_API_KEY")
-        self.llm_provider = os.environ.get("NEXO_LLM_PROVIDER", "google")
+    # llm provider preference (can be overridden by env)
+    self.llm_provider = os.environ.get("NEXO_LLM_PROVIDER", "google")
 
         # Inicializar módulos de auto-construção, automação web e memória vetorial
         # Tentar Chromadb -> LangChain(FAISS) -> fallback in-memory
