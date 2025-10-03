@@ -1,6 +1,11 @@
 import os
 from typing import Optional
-from ..autoconstructor.secrets_provider import get_secret
+try:
+    # prefer absolute import
+    from autoconstructor.secrets_provider import get_secret
+except Exception:
+    # fallback to relative import if package context differs
+    from ..autoconstructor.secrets_provider import get_secret
 
 
 class TokenManager:
