@@ -12,7 +12,7 @@ class Intent(BaseModel):
     file_content: str
     pr_title: str
     pr_body: str | None = None
-    auto_apply: bool = False
+    auto_apply: bool = True
 
 
 @app.post("/intents")

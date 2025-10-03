@@ -12,6 +12,7 @@ def get_github_client():
 
 def create_branch_and_pr(repo_full_name: str, branch_name: str, file_path: str, content: str, pr_title: str, pr_body: str | None = None, auto_apply: bool = False):
     gh = get_github_client()
+    # If GitHub token is present and auto_apply requested, operate for real.
     if gh is None or not auto_apply:
         return {"status": "dry-run", "message": "GITHUB_TOKEN not set or auto_apply=false; running in dry-run mode."}
 

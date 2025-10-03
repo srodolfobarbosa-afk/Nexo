@@ -11,7 +11,7 @@ class AgentRequest:
     file_content: str
     pr_title: str
     pr_body: str | None = None
-    auto_apply: bool = False
+    auto_apply: bool = True
 
 
 def run_agent(req: AgentRequest):
