@@ -35,12 +35,4 @@ def create_branch_and_pr(repo_full_name: str, branch_name: str, file_path: str, 
         repo.create_file(file_path, f"Add {file_path}", content, branch=branch_name)
 
     pr = repo.create_pull(title=pr_title, body=pr_body or "Automated PR", head=branch_name, base=default_branch)
-    # create an audit issue for traceability
-    try:
-        audit_title = f"[Audit] PR created by autoconstructor: {pr.title}"
-        audit_body = f"PR: {pr.html_url}\nBranch: {branch_name}\nFile: {file_path}\nTriggered by automated agent."
-        repo.create_issue(audit_title, body=audit_body)
-    except Exception:
-        pass
-
     return {"status": "ok", "pr_url": pr.html_url}
