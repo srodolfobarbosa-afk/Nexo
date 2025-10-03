@@ -112,6 +112,8 @@ class NexoGenesisAgent:
 
         # Autonomy flag: if any provider token exists, mark agent as autonomous-capable
         self.autonomy_enabled = any(v for v in self.tokens.values())
+        # llm provider preference (can be overridden by env)
+        self.llm_provider = os.environ.get("NEXO_LLM_PROVIDER", "google")
         try:
             self.search_module = InternetSearchModule() # Mantenha por enquanto
         except Exception:
@@ -123,8 +125,6 @@ class NexoGenesisAgent:
         except Exception:
             self.web_agent = None
             logging.warning("WebAgent indisponível.")
-    # llm provider preference (can be overridden by env)
-    self.llm_provider = os.environ.get("NEXO_LLM_PROVIDER", "google")
 
         # Inicializar módulos de auto-construção, automação web e memória vetorial
         # Tentar Chromadb -> LangChain(FAISS) -> fallback in-memory
