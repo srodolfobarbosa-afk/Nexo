@@ -1,6 +1,11 @@
 import os
 from typing import Optional
-from ..autoconstructor.secrets_provider import get_secret
+try:
+    # Prefer absolute import so tests and CI can import packages from repo root
+    from autoconstructor.secrets_provider import get_secret
+except Exception:  # pragma: no cover - fallback for different import contexts
+    # Fallback to relative import if running as a package
+    from ..autoconstructor.secrets_provider import get_secret
 
 
 class TokenManager:
