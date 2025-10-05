@@ -1,5 +1,6 @@
 import logging
 from typing import Any, Dict, Optional
+import os
 
 # Importar clientes das LLMs
 try:
@@ -22,6 +23,10 @@ class LLMCaller:
         self.config = config or {}
 
     def call(self, prompt: str, model: str = "auto", **kwargs) -> str:
+        # Support a fake LLM mode for CI/dev to avoid external network calls
+        if os.environ.get("FAKE_LLM", "false").lower() in ("1", "true", "yes"):
+            logging.info("LLMCaller: FAKE_LLM enabled — returning canned response")
+            return "{\"action\": \"clarify\", \"use_auto_construction\": false, \"response\": \"fake response from FAKE_LLM mode\"}"
         """
         Chama a LLM disponível seguindo ordem de prioridade/fallback.
         model: "gemini", "openai", "groq" ou "auto" (tenta todas)

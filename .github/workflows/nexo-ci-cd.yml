@@ -1,0 +1,92 @@
+name: Nexo CI/CD Autônomo
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pytest flake8
+
+      - name: Lint with flake8
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Run tests
+        run: pytest -v
+
+      - name: Auto-construction (Nexo evolution cycle)
+        run: |
+          echo ">>> Disparando ciclo autônomo do Nexo (modo seguro/ativo condicional)"
+          # Exportar secrets para o script (se existirem)
+          export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+          export GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
+          export GROQ_API_KEY="${{ secrets.GROQ_API_KEY }}"
+          export GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          export ALLOW_DEPLOY="${{ secrets.ALLOW_DEPLOY }}"
+
+          # Habilitar modo ativo automaticamente se houver alguma chave de LLM
+          if [ -n "$OPENAI_API_KEY" ] || [ -n "$GEMINI_API_KEY" ] || [ -n "$GROQ_API_KEY" ]; then
+            export ENABLE_AUTO_CONSTRUCTION=true
+            echo "[workflow] ENABLE_AUTO_CONSTRUCTION=true (LLM key present)"
+          else
+            export ENABLE_AUTO_CONSTRUCTION=false
+            echo "[workflow] ENABLE_AUTO_CONSTRUCTION=false (no LLM key found)"
+          fi
+
+          if [ -f scripts/auto_builder.py ]; then
+            python3 scripts/auto_builder.py || echo "Auto-construção concluída/sem atualizações"
+          else
+            echo "scripts/auto_builder.py não encontrado; pulando"
+          fi
+
+      - name: Deploy to Render
+        if: github.ref == 'refs/heads/main' && success()
+        env:
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          if [ -z "$RENDER_SERVICE_ID" ] || [ -z "$RENDER_API_KEY" ]; then
+            echo "Render deploy secrets are missing; skipping deploy"
+            exit 0
+          fi
+          curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}'
