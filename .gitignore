@@ -8,8 +8,8 @@ env/
 venv/
 venv/*
 /venv
-.env
-.env.*
+*.env
+.env*
 *.log
 
 # Node / misc
@@ -28,3 +28,8 @@ nexo_data.db
 *.db-journal
 logs/
 .venv/
+
+# Secrets and memory dumps
+.secrets.*
+memoria_curto_prazo.json
+
