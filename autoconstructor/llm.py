@@ -18,8 +18,11 @@ def generate_text(prompt: str, model: Optional[str] = None) -> str:
         # use openai package if available
         try:
             import openai
+
             openai.api_key = openai_key
-            resp = openai.Completion.create(model=model or "text-davinci-003", prompt=prompt, max_tokens=512)
+            resp = openai.Completion.create(
+                model=model or "text-davinci-003", prompt=prompt, max_tokens=512
+            )
             return resp.choices[0].text.strip()
         except Exception:
             pass

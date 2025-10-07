@@ -1,8 +1,9 @@
-import gradio as gr
 import os
+from pathlib import Path
+
+import gradio as gr
 import requests
 from transformers import pipeline
-from pathlib import Path
 
 
 def load_summarizer():
@@ -25,8 +26,14 @@ def summarize_text(text: str, max_length: int = 150):
     if hf_key:
         try:
             api_url = "https://api-inference.huggingface.co/models/google/flan-t5-small"
-            headers = {"Authorization": f"Bearer {hf_key}", "Accept": "application/json"}
-            payload = {"inputs": text, "parameters": {"max_new_tokens": int(max_length)}}
+            headers = {
+                "Authorization": f"Bearer {hf_key}",
+                "Accept": "application/json",
+            }
+            payload = {
+                "inputs": text,
+                "parameters": {"max_new_tokens": int(max_length)},
+            }
             resp = requests.post(api_url, headers=headers, json=payload, timeout=60)
             resp.raise_for_status()
             data = resp.json()
@@ -46,7 +53,9 @@ def summarize_text(text: str, max_length: int = 150):
     # Não enviar textos muito longos em uma única chamada para modelos pequenos
     # Aqui fazemos uma chamada direta; para produção é melhor chunking + sumarização incremental
     try:
-        summary = SUMMARIZER(text, max_length=max_length, min_length=30, do_sample=False)
+        summary = SUMMARIZER(
+            text, max_length=max_length, min_length=30, do_sample=False
+        )
         return summary[0]["summary_text"]
     except Exception as e:
         return f"Erro durante a sumarização: {e}"
@@ -69,13 +78,23 @@ def file_to_text(file_obj):
 
 
 with gr.Blocks(title="Nexo — Summarization (Gradio)") as demo:
-    gr.Markdown("# Nexo Summarization Demo\n\nCarregue um arquivo .txt ou cole o texto e clique em 'Summarize'.")
+    gr.Markdown(
+        "# Nexo Summarization Demo\n\nCarregue um arquivo .txt ou cole o texto e clique em 'Summarize'."
+    )
 
     with gr.Row():
         with gr.Column(scale=3):
             input_text = gr.Textbox(lines=12, label="Texto de entrada / Cole aqui")
-            file_input = gr.File(file_types=[".txt"], label="Ou carregue um arquivo .txt")
-            max_len = gr.Slider(minimum=50, maximum=512, value=150, step=10, label="Tamanho máximo do resumo")
+            file_input = gr.File(
+                file_types=[".txt"], label="Ou carregue um arquivo .txt"
+            )
+            max_len = gr.Slider(
+                minimum=50,
+                maximum=512,
+                value=150,
+                step=10,
+                label="Tamanho máximo do resumo",
+            )
             summarize_btn = gr.Button("Summarize")
         with gr.Column(scale=2):
             output = gr.Textbox(label="Resumo", lines=12)

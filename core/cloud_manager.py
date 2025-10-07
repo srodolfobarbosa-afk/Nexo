@@ -1,17 +1,20 @@
-import requests
 import os
+
+import requests
+
 
 class CloudManager:
     """
     Gerencia integração com API do Render (status, restart, deploy).
     """
+
     def __init__(self, service_id=None, api_key=None):
-        self.api_key = api_key or os.getenv('RENDER_API_KEY')
-        self.service_id = service_id or os.getenv('RENDER_SERVICE_ID')
-        self.base_url = 'https://api.render.com/v1/services'
+        self.api_key = api_key or os.getenv("RENDER_API_KEY")
+        self.service_id = service_id or os.getenv("RENDER_SERVICE_ID")
+        self.base_url = "https://api.render.com/v1/services"
         self.headers = {
-            'Authorization': f'Bearer {self.api_key}',
-            'Content-Type': 'application/json'
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
         }
 
     def get_status(self):

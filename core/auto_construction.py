@@ -3,6 +3,7 @@ class AutoConstructionModule:
     Módulo de auto-construção do Nexo Gênesis
     Pipeline: Architect AI → Coder AI → Reviewer AI → Deployer AI
     """
+
     def __init__(self, llm_caller):
         self.supabase = get_supabase_client()
         self.search = InternetSearchModule()
@@ -39,34 +40,39 @@ class AutoConstructionModule:
             f.write(script)
             logging.info("✅ Script de deploy gerado.")
         return script
-import os
+
+
 import json
-import subprocess
 import logging
-from typing import Any, Dict
+import os
+import subprocess
 from datetime import datetime
+from typing import Any, Dict
+
 from dotenv import load_dotenv
+
 from core.database import get_supabase_client
+from core.github_integration import GitHubIntegration
 from core.internet_search import InternetSearchModule
 from core.json_utils import (
-    extract_json,
-    safe_json_response,
-    create_json_prompt,
     ARCHITECTURE_SCHEMA,
     CODE_IMPLEMENTATION_SCHEMA,
-    REVIEW_SCHEMA,
     MISSION_INTERPRETATION_SCHEMA,
+    REVIEW_SCHEMA,
+    create_json_prompt,
+    extract_json,
+    safe_json_response,
 )
-from core.github_integration import GitHubIntegration
 
 load_dotenv()
+
 
 class AutoConstructionModule:
     """
     Módulo de auto-construção do Nexo Gênesis
     Pipeline: Architect AI → Coder AI → Reviewer AI → Deployer AI
     """
-    
+
     def __init__(self, llm_caller):
         self.supabase = get_supabase_client()
         self.search = InternetSearchModule()
@@ -105,7 +111,9 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
 
         return template.format(context=context, objective=objective)
 
-    def auto_construct_from_meta(self, context: str, objective: str, allow_deploy: bool = False) -> Dict[str, Any]:
+    def auto_construct_from_meta(
+        self, context: str, objective: str, allow_deploy: bool = False
+    ) -> Dict[str, Any]:
         """
         Wrapper que usa o meta-prompt para obter uma interpretação de missão do LLM.
         Se o LLM indicar `use_auto_construction: true` (ou equivalente), e `allow_deploy` for True,
@@ -117,37 +125,54 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
             prompt_text = self.build_meta_prompt(context, objective)
 
             # Envolver o prompt para forçar JSON conforme schema
-            wrapped_prompt = create_json_prompt(prompt_text, MISSION_INTERPRETATION_SCHEMA)
+            wrapped_prompt = create_json_prompt(
+                prompt_text, MISSION_INTERPRETATION_SCHEMA
+            )
 
             logging.info("📨 Chamando LLM para interpretar missão...")
             llm_response = self.llm_caller(wrapped_prompt, objective)
 
-            interpreted = safe_json_response(llm_response, fallback_response={
-                "action": "clarify",
-                "agent_name": None,
-                "description": "Falha na interpretação automática",
-                "requirements": [],
-                "response": llm_response[:500] if isinstance(llm_response, str) else str(llm_response),
-                "use_auto_construction": False
-            })
+            interpreted = safe_json_response(
+                llm_response,
+                fallback_response={
+                    "action": "clarify",
+                    "agent_name": None,
+                    "description": "Falha na interpretação automática",
+                    "requirements": [],
+                    "response": (
+                        llm_response[:500]
+                        if isinstance(llm_response, str)
+                        else str(llm_response)
+                    ),
+                    "use_auto_construction": False,
+                },
+            )
 
             result: Dict[str, Any] = {"interpreted_mission": interpreted}
 
             # Se o LLM indicar que devemos usar auto-construction e estamos autorizados
-            if interpreted.get("use_auto_construction") and interpreted.get("action") in ("auto_construct", "create_agent"):
+            if interpreted.get("use_auto_construction") and interpreted.get(
+                "action"
+            ) in ("auto_construct", "create_agent"):
                 if allow_deploy:
-                    logging.info("🚀 Execução autorizada: iniciando auto_construct_feature")
+                    logging.info(
+                        "🚀 Execução autorizada: iniciando auto_construct_feature"
+                    )
                     construction_result = self.auto_construct_feature(objective)
                     result["construction_result"] = construction_result
                 else:
-                    logging.info("⚠️ Auto-construction requisitado mas 'allow_deploy' está False. Não executando.")
-                    result["note"] = "Auto-construction requisitado pelo LLM, mas allow_deploy=False"
+                    logging.info(
+                        "⚠️ Auto-construction requisitado mas 'allow_deploy' está False. Não executando."
+                    )
+                    result["note"] = (
+                        "Auto-construction requisitado pelo LLM, mas allow_deploy=False"
+                    )
 
             return result
         except Exception as e:
             logging.exception("Erro em auto_construct_from_meta")
             return {"error": str(e)}
-    
+
     def auto_construct_feature(self, feature_request):
         """
         Pipeline completo de auto-construção de uma nova funcionalidade
@@ -157,8 +182,12 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
 
             # 0. Pesquisa de mercado proativa
             logging.info("🔎 Realizando pesquisa de mercado...")
-            mercado_results = self.search.search_web(f"{feature_request} market analysis opportunities", 3)
-            logging.info(f"Resultados da pesquisa de mercado: {json.dumps(mercado_results, indent=2)}")
+            mercado_results = self.search.search_web(
+                f"{feature_request} market analysis opportunities", 3
+            )
+            logging.info(
+                f"Resultados da pesquisa de mercado: {json.dumps(mercado_results, indent=2)}"
+            )
 
             # 0.1 Análise e estudo proativo
             logging.info("📊 Analisando e estudando oportunidades...")
@@ -181,14 +210,14 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
                 review_format = {
                     "approved": False,
                     "reason": "Review do LLM não retornou JSON válido ou sem chave 'approved'.",
-                    "raw_review": review
+                    "raw_review": review,
                 }
                 return {
                     "success": False,
                     "feature": feature_request,
                     "error": "Review do LLM não retornou JSON válido ou sem chave 'approved'.",
                     "review": review_format,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
 
             # 4. Deployer AI - Deploy (se aprovado)
@@ -207,11 +236,13 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
                     "deployment": deployment,
                     "dockerfile": dockerfile,
                     "deploy_script": deploy_script,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
                 if self.github.is_enabled():
                     logging.info("📡 Fazendo commit automático no GitHub...")
-                    github_success = self.github.auto_commit_construction_result(construction_result)
+                    github_success = self.github.auto_commit_construction_result(
+                        construction_result
+                    )
                     construction_result["github_commit"] = github_success
                 else:
                     logging.warning("⚠️ Integração GitHub desabilitada")
@@ -224,14 +255,16 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
                     "feature": feature_request,
                     "approved": review.get("approved", False),
                     "reason": review.get("issues", ["Erro desconhecido"]),
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
 
         except Exception as e:
             # Lógica para erro 403 e ação humana
             error_msg = str(e)
             if "403" in error_msg or "forbidden" in error_msg.lower():
-                logging.error("Erro 403: API do Google. Necessária ação manual: ativar permissão no Google Cloud Console.")
+                logging.error(
+                    "Erro 403: API do Google. Necessária ação manual: ativar permissão no Google Cloud Console."
+                )
                 # Log especial para ação humana
                 return {
                     "success": False,
@@ -239,15 +272,15 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
                     "approved": False,
                     "error": error_msg,
                     "action_required": "Ativar permissão no Google Cloud Console.",
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
             return {
                 "success": False,
                 "feature": feature_request,
                 "error": error_msg,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
-    
+
     def architect_ai(self, feature_request):
         """
         Architect AI - Planeja a arquitetura da nova funcionalidade
@@ -255,7 +288,9 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
         logging.info("🏗️ Architect AI analisando requisitos...")
 
         # Busca informações relevantes na internet
-        search_results = self.search.search_web(f"{feature_request} implementation architecture", 3)
+        search_results = self.search.search_web(
+            f"{feature_request} implementation architecture", 3
+        )
 
         instruction = f"""
         Você é o Architect AI do ecossistema EcoGuardians.
@@ -282,13 +317,13 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
             "database_changes": [],
             "api_endpoints": [],
             "testing_strategy": "Testes básicos",
-            "deployment_steps": ["Deploy padrão"]
+            "deployment_steps": ["Deploy padrão"],
         }
-        
+
         architecture = safe_json_response(response, fallback)
         self._log_construction_step("architect", feature_request, architecture)
         return architecture
-    
+
     def coder_ai(self, architecture):
         """
         Coder AI - Implementa o código baseado na arquitetura
@@ -297,7 +332,9 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
 
         # Busca exemplos de código relevantes
         tech_stack = " ".join(architecture.get("dependencies", []))
-        code_examples = self.search.search_code_examples(tech_stack, architecture["overview"])
+        code_examples = self.search.search_code_examples(
+            tech_stack, architecture["overview"]
+        )
 
         instruction = f"""
         Você é o Coder AI do ecossistema EcoGuardians.
@@ -322,16 +359,12 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
         response = self.llm_caller(prompt, f"Implementar {architecture['overview']}")
 
         # Usar função robusta de extração JSON
-        fallback = {
-            "files": {},
-            "installation_commands": [],
-            "setup_instructions": []
-        }
+        fallback = {"files": {}, "installation_commands": [], "setup_instructions": []}
 
         code = safe_json_response(response, fallback)
         self._log_construction_step("coder", architecture["overview"], code)
         return code
-    
+
     def reviewer_ai(self, code, architecture):
         """
         Reviewer AI - Revisa o código e arquitetura
@@ -372,7 +405,7 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
             "suggestions": [],
             "security_check": "Falhou",
             "performance_check": "Falhou",
-            "compatibility_check": "Falhou"
+            "compatibility_check": "Falhou",
         }
 
         # Corrigir resposta se não vier JSON válido
@@ -380,13 +413,15 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
             review = safe_json_response(response, fallback)
             if "approved" not in review:
                 review["approved"] = False
-                review["issues"] = review.get("issues", []) + ["Chave 'approved' ausente no retorno do LLM."]
+                review["issues"] = review.get("issues", []) + [
+                    "Chave 'approved' ausente no retorno do LLM."
+                ]
         except Exception as e:
             review = fallback
             review["issues"].append(f"Erro ao extrair JSON: {e}")
         self._log_construction_step("reviewer", architecture["overview"], review)
         return review
-    
+
     def deployer_ai(self, code, architecture):
         """
         Deployer AI - Faz o deploy do código aprovado
@@ -399,55 +434,65 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
                 "files_modified": [],
                 "commands_executed": [],
                 "git_operations": [],
-                "status": "success"
+                "status": "success",
             }
             # 1. Criar/modificar arquivos
             for file_path, content in code.get("files", {}).items():
                 try:
                     # Garantir que o diretório existe
                     os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                    
+
                     # Escrever arquivo
-                    with open(file_path, 'w', encoding='utf-8') as f:
+                    with open(file_path, "w", encoding="utf-8") as f:
                         f.write(content)
-                    
+
                     deployment_result["files_created"].append(file_path)
                     logging.info(f"✅ Arquivo criado: {file_path}")
                 except Exception as e:
                     logging.error(f"❌ Erro ao criar {file_path}: {e}")
-            
+
             # 2. Executar comandos de instalação
             for command in code.get("installation_commands", []):
                 try:
-                    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-                    deployment_result["commands_executed"].append({
-                        "command": command,
-                        "success": result.returncode == 0,
-                        "output": result.stdout,
-                        "error": result.stderr
-                    })
+                    result = subprocess.run(
+                        command, shell=True, capture_output=True, text=True
+                    )
+                    deployment_result["commands_executed"].append(
+                        {
+                            "command": command,
+                            "success": result.returncode == 0,
+                            "output": result.stdout,
+                            "error": result.stderr,
+                        }
+                    )
                     logging.info(f"✅ Comando executado: {command}")
                 except Exception as e:
                     logging.error(f"❌ Erro ao executar {command}: {e}")
-            
+
             # 3. Operações Git (se em repositório)
             try:
                 # Add arquivos ao git (usa diretório do repositório atual)
-                repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+                repo_root = os.path.abspath(
+                    os.path.join(os.path.dirname(__file__), "..", "..")
+                )
                 subprocess.run("git add .", shell=True, cwd=repo_root)
-                
+
                 # Commit
                 commit_message = f"Auto-construção: {architecture.get('overview', 'Nova funcionalidade')}"
-                subprocess.run(f'git commit -m "{commit_message}"', shell=True, cwd=repo_root)
-                
+                subprocess.run(
+                    f'git commit -m "{commit_message}"', shell=True, cwd=repo_root
+                )
+
                 deployment_result["git_operations"].append("commit")
                 logging.info("✅ Commit realizado")
             except Exception as e:
                 logging.warning(f"⚠️ Operações Git falharam: {e}")
-            
-            self._log_construction_step("deployer", architecture["overview"], deployment_result)
+
+            self._log_construction_step(
+                "deployer", architecture["overview"], deployment_result
+            )
             return deployment_result
-            
+
         except Exception as e:
             return {
                 "status": "failed",
@@ -455,9 +500,9 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
                 "files_created": [],
                 "files_modified": [],
                 "commands_executed": [],
-                "git_operations": []
+                "git_operations": [],
             }
-    
+
     def _log_construction_step(self, step, feature, result):
         """
         Registra cada etapa da construção
@@ -466,31 +511,34 @@ Restrição de Saída: Responda APENAS com JSON válido seguindo o schema MISSIO
             "step": step,
             "feature": feature,
             "result": result,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
         self.construction_history.append(log_entry)
-        
+
         # Salvar no Supabase (conceitual)
         # self.supabase.table("construction_logs").insert(log_entry).execute()
-    
+
     def get_construction_history(self):
         """
         Retorna histórico de construções
         """
         return self.construction_history
 
+
 if __name__ == "__main__":
     # Teste do módulo
     logging.info("🧪 Testando módulo de auto-construção...")
 
     # Integração real com Gemini
-    import google.generativeai as genai
     import os
+
+    import google.generativeai as genai
+
     genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
     def llm_caller(prompt, context):
         try:
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel("gemini-1.5-flash")
             response = model.generate_content(f"{prompt}\nContexto: {context}")
             return response.text
         except Exception as e:
@@ -498,5 +546,7 @@ if __name__ == "__main__":
             return '{"erro": "Falha na chamada Gemini"}'
 
     auto_constructor = AutoConstructionModule(llm_caller)
-    result = auto_constructor.auto_construct_feature("Sistema de notificações por email")
+    result = auto_constructor.auto_construct_feature(
+        "Sistema de notificações por email"
+    )
     logging.info(f"Resultado: {result}")

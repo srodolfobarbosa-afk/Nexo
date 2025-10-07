@@ -1,11 +1,12 @@
-import os
 import logging
+import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
 try:
-    from supabase import create_client, Client
+    from supabase import Client, create_client
 except Exception:
     # não falhar na importação — funções abaixo lidarão com ausência do pacote
     create_client = None
@@ -15,6 +16,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 logger = logging.getLogger("core.database")
+
 
 def get_supabase_client() -> "Client | None":
     """Retorna um cliente Supabase se as credenciais e a biblioteca estiverem presentes.
@@ -40,4 +42,3 @@ if __name__ == "__main__":
         print("Conexão com Supabase estabelecida com sucesso!")
     else:
         print("Supabase não configurado ou indisponível no ambiente.")
-

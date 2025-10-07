@@ -6,18 +6,13 @@ Este arquivo apenas reexporta a versão sem acento para manter compatibilidade.
 """
 
 __all__ = ["MarketWatcherEconomico"]
-import time
 import asyncio
-from supabase import Client, create_client
-from typing import Dict, List, Any
-import yfinance as yf #Exemplo de API, substituir conforme necessidade
 import time
-import asyncio
+from typing import Any, Dict, List
+
+import yfinance as yf  # Exemplo de API, substituir conforme necessidade
 from supabase import Client, create_client
-from typing import Dict, List, Any
-import yfinance as yf #Exemplo de API, substituir conforme necessidade
 
 from .MarketWatcherEconomico import MarketWatcherEconomico
 
 __all__ = ["MarketWatcherEconomico"]
-

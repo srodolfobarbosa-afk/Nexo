@@ -2,12 +2,23 @@
 
 Fornece tabelas simples: memories, tasks, agent_logs, revenue
 """
-from sqlalchemy import create_engine, Column, Integer, String, Text, JSON, Float, DateTime
-from sqlalchemy.orm import declarative_base, sessionmaker
+
 import os
 from datetime import datetime
 
-DATABASE_URL = os.environ.get('NEXO_SQLITE_URL', 'sqlite:///./nexo_data.db')
+from sqlalchemy import (
+    JSON,
+    Column,
+    DateTime,
+    Float,
+    Integer,
+    String,
+    Text,
+    create_engine,
+)
+from sqlalchemy.orm import declarative_base, sessionmaker
+
+DATABASE_URL = os.environ.get("NEXO_SQLITE_URL", "sqlite:///./nexo_data.db")
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 Base = declarative_base()
@@ -15,7 +26,7 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
 class Memory(Base):
-    __tablename__ = 'memories'
+    __tablename__ = "memories"
     id = Column(Integer, primary_key=True, index=True)
     key = Column(String(128), index=True)
     data = Column(Text)
@@ -23,10 +34,10 @@ class Memory(Base):
 
 
 class Task(Base):
-    __tablename__ = 'tasks'
+    __tablename__ = "tasks"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(256))
-    status = Column(String(32), default='pending')
+    status = Column(String(32), default="pending")
     result = Column(Text, nullable=True)
     reward = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -34,7 +45,7 @@ class Task(Base):
 
 
 class AgentLog(Base):
-    __tablename__ = 'agent_logs'
+    __tablename__ = "agent_logs"
     id = Column(Integer, primary_key=True, index=True)
     level = Column(String(32))
     message = Column(Text)
@@ -43,7 +54,7 @@ class AgentLog(Base):
 
 
 class Revenue(Base):
-    __tablename__ = 'revenue'
+    __tablename__ = "revenue"
     id = Column(Integer, primary_key=True, index=True)
     amount = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -67,7 +78,9 @@ def save_memory_local(key: str, data: str):
         s.close()
 
 
-def save_task_local(name: str, status: str = 'pending', result: str = None, reward: float = 0.0):
+def save_task_local(
+    name: str, status: str = "pending", result: str = None, reward: float = 0.0
+):
     s = get_session()
     try:
         t = Task(name=name, status=status, result=result, reward=reward)
@@ -117,6 +130,7 @@ def list_tasks(limit: int = 50):
 
 # local import to avoid circular reference
 from sqlalchemy import func as _func
+
 func_sum = _func.sum
 
 init_db()

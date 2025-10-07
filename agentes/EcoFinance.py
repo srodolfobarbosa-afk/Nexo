@@ -1,7 +1,8 @@
-
-import os
 import logging
+import os
+
 from dotenv import load_dotenv
+
 from core.database import get_supabase_client
 
 load_dotenv()
@@ -39,21 +40,27 @@ class EcoFinanceAgent:
     def record_transaction(self, amount: float, metadata: dict | None = None):
         metadata = metadata or {}
         try:
-            self.supabase.table("transactions").insert({"amount": amount, "metadata": metadata}).execute()
-            self.log_audit("transaction_recorded", {"amount": amount, "metadata": metadata})
+            self.supabase.table("transactions").insert(
+                {"amount": amount, "metadata": metadata}
+            ).execute()
+            self.log_audit(
+                "transaction_recorded", {"amount": amount, "metadata": metadata}
+            )
         except Exception:
             logging.exception("Falha ao registrar transação")
 
     def log_audit(self, action: str, details: dict):
         try:
-            self.supabase.table("audit_logs").insert({"action": action, "details": details}).execute()
+            self.supabase.table("audit_logs").insert(
+                {"action": action, "details": details}
+            ).execute()
         except Exception:
             logging.exception("Falha ao gravar log de auditoria")
 
 
 if __name__ == "__main__":
     from core.nl_handler import NLHandler
+
     nl = NLHandler()
     agent = EcoFinanceAgent(nl)
     agent.run()
-

@@ -1,6 +1,6 @@
 import logging
-from typing import Any, Dict, Optional
 import os
+from typing import Any, Dict, Optional
 
 # Importar clientes das LLMs
 try:
@@ -18,6 +18,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+
 class LLMCaller:
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
@@ -26,7 +27,7 @@ class LLMCaller:
         # Support a fake LLM mode for CI/dev to avoid external network calls
         if os.environ.get("FAKE_LLM", "false").lower() in ("1", "true", "yes"):
             logging.info("LLMCaller: FAKE_LLM enabled — returning canned response")
-            return "{\"action\": \"clarify\", \"use_auto_construction\": false, \"response\": \"fake response from FAKE_LLM mode\"}"
+            return '{"action": "clarify", "use_auto_construction": false, "response": "fake response from FAKE_LLM mode"}'
         """
         Chama a LLM disponível seguindo ordem de prioridade/fallback.
         model: "gemini", "openai", "groq" ou "auto" (tenta todas)
@@ -69,9 +70,7 @@ class LLMCaller:
             raise ValueError("API key OpenAI não configurada")
         openai.api_key = api_key
         response = openai.ChatCompletion.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            **kwargs
+            model=model, messages=[{"role": "user", "content": prompt}], **kwargs
         )
         return response["choices"][0]["message"]["content"]
 
@@ -82,8 +81,6 @@ class LLMCaller:
             raise ValueError("API key Groq não configurada")
         groq.api_key = api_key
         response = groq.ChatCompletion.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            **kwargs
+            model=model, messages=[{"role": "user", "content": prompt}], **kwargs
         )
         return response["choices"][0]["message"]["content"]

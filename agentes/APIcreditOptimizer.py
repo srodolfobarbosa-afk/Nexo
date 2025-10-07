@@ -1,8 +1,10 @@
 import logging
-from core.database import get_supabase_client
 from datetime import datetime
 
+from core.database import get_supabase_client
+
 logger = logging.getLogger(__name__)
+
 
 class APIcreditOptimizer:
     """
@@ -95,7 +97,11 @@ class APIcreditOptimizer:
         try:
             summary = self.analyze_usage()
             suggestions = self.suggest_optimization()
-            return {"agent": self.name if hasattr(self, 'name') else 'APIcreditOptimizer', "summary": summary, "suggestions": suggestions}
+            return {
+                "agent": self.name if hasattr(self, "name") else "APIcreditOptimizer",
+                "summary": summary,
+                "suggestions": suggestions,
+            }
         except Exception as e:
             logger.error(f"Erro no handle do APIcreditOptimizer: {e}")
             return {"error": str(e)}

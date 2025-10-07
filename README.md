@@ -1,4 +1,56 @@
-eu QUERO QUERO  faça o NexoGenesis "rodar de verdade" e que o sistema fique vivo, auto-construa e opere automaticamente.# Atualização do Projeto Nexo
+Nexo — sistema de agentes orquestradores
+
+Este repositório contém o projeto Nexo: conjunto de agentes autônomos e ferramentas de orquestração.
+
+Resumo rápido — o que fiz nesta iteração:
+- Corrigi imports que impediam a suíte de testes de rodar.
+- Adicionei etapas de lint/format, Dockerfile multistage e docker-compose para desenvolvimento.
+
+Principais comandos locais
+
+1. Instalar dependências de desenvolvimento (recomendado em um virtualenv):
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements_dev.txt
+```
+
+2. Rodar testes:
+
+```bash
+pytest -q
+```
+
+3. Rodar localmente com docker-compose:
+
+```bash
+# Build e up (development)
+docker-compose up --build
+```
+
+4. Build Docker standalone:
+
+```bash
+docker build -t nexo:latest .
+```
+
+Notas de deploy
+
+- Existe workflow GitHub Actions básico em `.github/workflows/consolidated-ci.yml` que roda lint → tests → build.
+- Deploy para Render está disponível via secrets `RENDER_SERVICE_ID` e `RENDER_API_KEY`.
+
+Segurança e variáveis de ambiente
+
+- Nunca comite chaves. Use `.env` localmente e configure secrets no GitHub para CI/CD.
+
+Problemas pendentes
+
+- Alguns módulos assumem dependências pesadas em tempo de import. Refatorei os pontos críticos para lazy-imports nos agentes essenciais.
+- Recomendado revisar `requirements.txt` de produção (algumas bibliotecas do manifesto são apenas opcionais).
+
+Para detalhes completos do que foi alterado, consulte o CHANGELOG.md e os commits no repositório.
 
 ## Instruções de Configuração
 

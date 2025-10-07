@@ -1,8 +1,9 @@
-import os
 import logging
-from supabase import Client, create_client
-from typing import Dict, Any
+import os
+from typing import Any, Dict
+
 import pandas as pd
+from supabase import Client, create_client
 
 logging.basicConfig(level=logging.INFO)
 
@@ -10,7 +11,9 @@ logging.basicConfig(level=logging.INFO)
 class OportunidadesNexo:
     """Classe para identificar oportunidades usando dados do Nexo via Supabase."""
 
-    def __init__(self, supabase_url: str | None = None, supabase_key: str | None = None):
+    def __init__(
+        self, supabase_url: str | None = None, supabase_key: str | None = None
+    ):
         if supabase_url is None:
             supabase_url = os.environ.get("SUPABASE_URL")
         if supabase_key is None:
@@ -25,7 +28,9 @@ class OportunidadesNexo:
                 logging.error(f"Erro ao conectar ao Supabase: {e}")
                 self.supabase = None
         else:
-            logging.warning("SUPABASE_URL ou SUPABASE_KEY ausentes; funcionalidade limitada.")
+            logging.warning(
+                "SUPABASE_URL ou SUPABASE_KEY ausentes; funcionalidade limitada."
+            )
 
         try:
             from core.api_search import APISearch
@@ -71,8 +76,12 @@ class OportunidadesNexo:
             relatorio = "Relatório de Oportunidades:\n\n"
             relatorio += f"Tendência de Mercado: {resultados.get('tendencia', 'N/A')}\n"
             relatorio += f"Potencial de Mercado: {resultados.get('potencial', 'N/A')}\n"
-            relatorio += f"Previsão de Receita: {resultados.get('previsao_receita', 'N/A')}\n"
-            relatorio += f"Previsão de Inovação: {resultados.get('previsao_inovacao', 'N/A')}\n"
+            relatorio += (
+                f"Previsão de Receita: {resultados.get('previsao_receita', 'N/A')}\n"
+            )
+            relatorio += (
+                f"Previsão de Inovação: {resultados.get('previsao_inovacao', 'N/A')}\n"
+            )
             return relatorio
         except Exception as e:
             logging.error(f"Erro na geração de relatório: {e}")

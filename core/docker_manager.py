@@ -1,16 +1,18 @@
-import subprocess
 import os
+import subprocess
+
 
 class DockerManager:
     """
     Gerencia operações Docker: build, push e deploy automáticos.
     """
-    def __init__(self, image_name, dockerfile_path='Dockerfile', registry_url=None):
+
+    def __init__(self, image_name, dockerfile_path="Dockerfile", registry_url=None):
         self.image_name = image_name
         self.dockerfile_path = dockerfile_path
-        self.registry_url = registry_url or os.getenv('DOCKER_REGISTRY_URL')
+        self.registry_url = registry_url or os.getenv("DOCKER_REGISTRY_URL")
 
-    def build_image(self, tag='latest'):
+    def build_image(self, tag="latest"):
         full_image = f"{self.image_name}:{tag}"
         print(f"🔨 Buildando imagem Docker: {full_image}")
         cmd = ["docker", "build", "-t", full_image, "-f", self.dockerfile_path, "."]
@@ -21,7 +23,7 @@ class DockerManager:
             return False
         return True
 
-    def push_image(self, tag='latest'):
+    def push_image(self, tag="latest"):
         full_image = f"{self.image_name}:{tag}"
         if self.registry_url:
             full_image = f"{self.registry_url}/{full_image}"
@@ -34,7 +36,7 @@ class DockerManager:
             return False
         return True
 
-    def deploy_container(self, tag='latest', detach=True):
+    def deploy_container(self, tag="latest", detach=True):
         full_image = f"{self.image_name}:{tag}"
         print(f"⚡ Iniciando container: {full_image}")
         cmd = ["docker", "run"]

@@ -1,14 +1,16 @@
+import json
 import os
 import time
-import json
+
 from dotenv import load_dotenv
+
 from communication_manager import notify_user
-from genesis_agent_builder import GenesisAgentBuilder
 from debate_environment import DebateEnvironment
+from genesis_agent_builder import GenesisAgentBuilder
 from tool_builder import ToolBuilder
 
 # Carrega variáveis do .env (opcional)
-env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
 load_dotenv(env_path)
 
 
@@ -48,7 +50,7 @@ def testar_chave(provedor: str, chave: str) -> bool:
 
 
 def obter_provedor_prioritario():
-    ordem = os.getenv("NEXO_LLM_PROVIDER", "google,openai,groq,gemini").split(',')
+    ordem = os.getenv("NEXO_LLM_PROVIDER", "google,openai,groq,gemini").split(",")
     chaves_validas, chaves_invalidas = validar_chaves_api()
     for prov in ordem:
         if prov in chaves_validas:
@@ -57,9 +59,9 @@ def obter_provedor_prioritario():
 
 
 def buscar_memoria_curto_prazo():
-    memoria_path = os.path.join(os.path.dirname(__file__), 'memoria_curto_prazo.json')
+    memoria_path = os.path.join(os.path.dirname(__file__), "memoria_curto_prazo.json")
     if os.path.exists(memoria_path):
-        with open(memoria_path, 'r') as f:
+        with open(memoria_path, "r") as f:
             try:
                 dados = json.load(f)
                 print(f"Memória de curto prazo carregada: {dados}")
@@ -72,9 +74,9 @@ def buscar_memoria_curto_prazo():
 
 
 def registrar_memoria_curto_prazo(dados):
-    memoria_path = os.path.join(os.path.dirname(__file__), 'memoria_curto_prazo.json')
+    memoria_path = os.path.join(os.path.dirname(__file__), "memoria_curto_prazo.json")
     try:
-        with open(memoria_path, 'w') as f:
+        with open(memoria_path, "w") as f:
             json.dump(dados, f)
         print("Memória de curto prazo registrada.")
     except Exception as e:
@@ -87,19 +89,27 @@ def plano_acao_humana(chaves_invalidas):
     for prov, chave in chaves_invalidas.items():
         mensagem += f"- Provedor {prov} com chave inválida: {chave}\n  > Gere uma nova chave de API para o serviço {prov} e atualize o arquivo .env.\n"
         print(f"- Provedor {prov} com chave inválida: {chave}")
-        print(f"  > Gere uma nova chave de API para o serviço {prov} e atualize o arquivo .env.")
+        print(
+            f"  > Gere uma nova chave de API para o serviço {prov} e atualize o arquivo .env."
+        )
     notify_user(mensagem, subject="Nexo: Ação Humana Necessária")
-    print("Aguardando resposta do usuário... Nexo continuará evoluindo e estudando enquanto espera.")
+    print(
+        "Aguardando resposta do usuário... Nexo continuará evoluindo e estudando enquanto espera."
+    )
     while True:
         try:
-            resposta = input("Digite 'ok' quando resolver o problema ou pressione Enter para continuar estudando: ")
+            resposta = input(
+                "Digite 'ok' quando resolver o problema ou pressione Enter para continuar estudando: "
+            )
         except Exception:
-            resposta = ''
-        if resposta.strip().lower() == 'ok':
+            resposta = ""
+        if resposta.strip().lower() == "ok":
             print("Chaves atualizadas. Retomando fluxo principal.")
             break
         else:
-            print("Nexo está estudando, evoluindo ou se auto-corrigindo enquanto aguarda...")
+            print(
+                "Nexo está estudando, evoluindo ou se auto-corrigindo enquanto aguarda..."
+            )
             time.sleep(5)
 
 
@@ -108,7 +118,7 @@ def auto_construir_ferramenta(problema, descricao):
     tb = ToolBuilder()
     prompt = f"Crie uma função Python que resolva o seguinte problema: {descricao}. O problema detectado foi: {problema}"
     resposta = dummy_llm(prompt)
-    code = resposta.get('code') if isinstance(resposta, dict) else None
+    code = resposta.get("code") if isinstance(resposta, dict) else None
     if not code:
         print("[Auto-Construção] LLM não retornou código válido.")
         return None
@@ -144,14 +154,18 @@ def auto_evolution_loop():
             spec = {"name": nome, "tools": ["internet_search", "self_correction"]}
             agent_builder.build_agent(spec)
 
-    agentes = [agent_builder.agents.get(nome) for nome in agentes_nomes if nome in agent_builder.agents]
+    agentes = [
+        agent_builder.agents.get(nome)
+        for nome in agentes_nomes
+        if nome in agent_builder.agents
+    ]
     debate_env = DebateEnvironment(agentes)
 
     while True:
         print(f"\n--- CICLO {ciclo} DE AUTO-EVOLUÇÃO ---")
         provedor, chave = obter_provedor_prioritario()
-        memoria_curto_prazo['ultimo_provedor'] = provedor
-        memoria_curto_prazo['ciclo'] = ciclo
+        memoria_curto_prazo["ultimo_provedor"] = provedor
+        memoria_curto_prazo["ciclo"] = ciclo
 
         if not provedor:
             _, chaves_invalidas = validar_chaves_api()
@@ -169,18 +183,23 @@ def auto_evolution_loop():
             try:
                 nexo_genesis.evolution_module.evolve()
                 evolucao_status = nexo_genesis.evolution_module.get_evolution_status()
-                memoria_curto_prazo['evolucao'] = evolucao_status
-                nexo_genesis.save_to_memory("NexoGenesis", f"evolucao_ciclo_{ciclo}", evolucao_status)
+                memoria_curto_prazo["evolucao"] = evolucao_status
+                nexo_genesis.save_to_memory(
+                    "NexoGenesis", f"evolucao_ciclo_{ciclo}", evolucao_status
+                )
             except Exception as e:
                 print(f"Erro na evolução: {e}")
 
         # Periodicamente tenta auto-construção
         if ciclo % 2 == 0:
             try:
-                nome_tool = auto_construir_ferramenta(f"Ciclo {ciclo}", "Exemplo de ferramenta gerada")
+                nome_tool = auto_construir_ferramenta(
+                    f"Ciclo {ciclo}", "Exemplo de ferramenta gerada"
+                )
                 if nome_tool:
-                    memoria_curto_prazo.setdefault('ferramentas', {})[nome_tool] = {
-                        'descricao': 'gerada automaticamente', 'ciclo': ciclo
+                    memoria_curto_prazo.setdefault("ferramentas", {})[nome_tool] = {
+                        "descricao": "gerada automaticamente",
+                        "ciclo": ciclo,
                     }
             except Exception as e:
                 print(f"Falha na auto-construção: {e}")

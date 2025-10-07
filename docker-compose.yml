@@ -1,0 +1,28 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./:/app:delegated
+    environment:
+      - FLASK_ENV=development
+      - START_MISSION_RUNNER=false
+    command: gunicorn src.ws_server:app --bind 0.0.0.0:8000 --workers 1 --timeout 120
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: nexo_dev
+      POSTGRES_USER: nexo
+      POSTGRES_PASSWORD: nexo
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

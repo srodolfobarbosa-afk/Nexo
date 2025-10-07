@@ -1,6 +1,7 @@
-from dataclasses import dataclass
-from .github_client import create_branch_and_pr
 import time
+from dataclasses import dataclass
+
+from .github_client import create_branch_and_pr
 
 
 @dataclass
@@ -19,5 +20,13 @@ def run_agent(req: AgentRequest):
     ts = int(time.time())
     branch_name = f"{req.branch_prefix}-{ts}"
     # call github client (will be dry-run if no token provided)
-    result = create_branch_and_pr(req.repo, branch_name, req.file_path, req.file_content, req.pr_title, req.pr_body, auto_apply=req.auto_apply)
+    result = create_branch_and_pr(
+        req.repo,
+        branch_name,
+        req.file_path,
+        req.file_content,
+        req.pr_title,
+        req.pr_body,
+        auto_apply=req.auto_apply,
+    )
     return {"branch": branch_name, "result": result}

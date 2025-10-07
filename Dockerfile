@@ -1,28 +1,43 @@
-FROM python:3.12-slim
+FROM --platform=linux/amd64 python:3.12-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# install system deps
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    git \
+# instalar dependências de sistema necessárias para compilar algumas wheels
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential git gcc libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# copy only requirements first for better caching
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# copiar apenas requirements para cache eficiente
+COPY requirements.txt /app/requirements.txt
+RUN python -m pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r /app/requirements.txt
 
-# copy the rest of the source
+FROM python:3.12-slim AS runtime
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+WORKDIR /app
+
+# runtime deps
+RUN apt-get update && apt-get install -y --no-install-recommends libpq5 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# copiar pacotes instalados do builder
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# copiar código
 COPY . /app
 
 EXPOSE 8000
 
-# default envs (override in production or with secrets manager)
+# variáveis default (podem ser sobrescritas em produção)
 ENV FLASK_ENV=production
 ENV START_MISSION_RUNNER=true
 
-# recommended gunicorn command; production should provide env vars and secrets
+USER root
+
+# startup recomendado (override via ENTRYPOINT/CMD em produção)
 CMD ["gunicorn", "src.ws_server:app", "--bind", "0.0.0.0:8000", "--workers", "1", "--timeout", "120"]

@@ -1,6 +1,7 @@
 import os
-import requests
 from typing import Optional
+
+import requests
 
 
 def get_secret_from_env(key: str) -> Optional[str]:

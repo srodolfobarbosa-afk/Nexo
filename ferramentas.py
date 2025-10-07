@@ -1,24 +1,26 @@
 import os
 import subprocess
+
 import google.generativeai as genai
-from googleapiclient.discovery import build
-from supabase import create_client, Client
 from dotenv import load_dotenv
+from googleapiclient.discovery import build
+from supabase import Client, create_client
 
 # Força a leitura do .env a partir do diretório do script, garantindo que ele sempre seja encontrado.
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
 # ==================== Variáveis de Configuração ====================
-API_KEY_GEMINI = os.getenv('GOOGLE_API_KEY')
-API_KEY_GOOGLE_SEARCH = os.getenv('GOOGLE_SEARCH_API_KEY')
-CSE_ID = os.getenv('GOOGLE_CSE_ID')
-SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+API_KEY_GEMINI = os.getenv("GOOGLE_API_KEY")
+API_KEY_GOOGLE_SEARCH = os.getenv("GOOGLE_SEARCH_API_KEY")
+CSE_ID = os.getenv("GOOGLE_CSE_ID")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 
 # Configurações de API e modelos
 genai.configure(api_key=API_KEY_GEMINI)
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel("gemini-1.5-flash")
+
 
 # ==================== Funções de Ferramentas ====================
 def testar_conexao_supabase():
@@ -33,6 +35,7 @@ def testar_conexao_supabase():
         print(f"Nexo: Erro ao conectar ao Supabase: {e}")
         return None
 
+
 def salvar_no_supabase(tabela, dados):
     supabase_client = testar_conexao_supabase()
     if not supabase_client:
@@ -45,10 +48,11 @@ def salvar_no_supabase(tabela, dados):
     except Exception as e:
         print(f"Nexo: Erro ao salvar dados no Supabase: {e}")
         return None
-        
+
+
 def ler_arquivo(nome_arquivo):
     try:
-        with open(nome_arquivo, 'r', encoding='utf-8') as file:
+        with open(nome_arquivo, "r", encoding="utf-8") as file:
             return file.read()
     except FileNotFoundError:
         print(f"Erro: O arquivo '{nome_arquivo}' não foi encontrado.")
@@ -57,13 +61,15 @@ def ler_arquivo(nome_arquivo):
         print(f"Erro ao ler o arquivo: {e}")
         return None
 
-def criar_arquivo_texto(nome_arquivo, conteudo=''):
+
+def criar_arquivo_texto(nome_arquivo, conteudo=""):
     try:
-        with open(nome_arquivo, 'w', encoding='utf-8') as f:
+        with open(nome_arquivo, "w", encoding="utf-8") as f:
             f.write(conteudo)
         print(f"Nexo: Arquivo '{nome_arquivo}' criado com sucesso.")
     except Exception as e:
         print(f"Erro ao criar o arquivo: {e}")
+
 
 def criar_pasta(nome_pasta):
     try:
@@ -72,30 +78,30 @@ def criar_pasta(nome_pasta):
     except Exception as e:
         print(f"Erro ao criar a pasta: {e}")
 
+
 def pesquisar_na_internet(termo_de_busca):
     if not API_KEY_GOOGLE_SEARCH or not CSE_ID:
         print("Nexo: Chaves de API do Google Search não estão configuradas.")
         return "Nexo: Erro de configuração."
-        
+
     try:
         service = build("customsearch", "v1", developerKey=API_KEY_GOOGLE_SEARCH)
-        res = service.cse().list(
-            q=termo_de_busca,
-            cx=CSE_ID,
-            num=5
-        ).execute()
+        res = service.cse().list(q=termo_de_busca, cx=CSE_ID, num=5).execute()
 
         resultados_formatados = ""
-        for item in res.get('items', []):
-            title = item.get('title')
-            snippet = item.get('snippet')
-            link = item.get('link')
-            resultados_formatados += f"Título: {title}\nLink: {link}\nDescrição: {snippet}\n\n"
+        for item in res.get("items", []):
+            title = item.get("title")
+            snippet = item.get("snippet")
+            link = item.get("link")
+            resultados_formatados += (
+                f"Título: {title}\nLink: {link}\nDescrição: {snippet}\n\n"
+            )
         print(resultados_formatados)
         return resultados_formatados
     except Exception as e:
         print(f"Nexo: Ocorreu um erro durante a pesquisa: {e}")
         return None
+
 
 def usar_gemini_para_tarefa(prompt, contexto=""):
     if not API_KEY_GEMINI:
@@ -107,6 +113,7 @@ def usar_gemini_para_tarefa(prompt, contexto=""):
         print(f"Nexo: {response.text}")
     except Exception as e:
         print(f"Nexo: Ocorreu um erro ao usar o Gemini: {e}")
+
 
 def gerar_codigo_com_gemini(topico):
     if not API_KEY_GEMINI:
@@ -122,15 +129,22 @@ def gerar_codigo_com_gemini(topico):
     except Exception as e:
         print(f"Nexo: Ocorreu um erro ao gerar o código: {e}")
 
+
 def executar_codigo(nome_arquivo):
-    if not nome_arquivo.endswith('.py'):
-        nome_arquivo += '.py'
+    if not nome_arquivo.endswith(".py"):
+        nome_arquivo += ".py"
     if not os.path.exists(nome_arquivo):
         print(f"Nexo: O arquivo '{nome_arquivo}' não foi encontrado.")
         return
     try:
         print(f"Nexo: Executando '{nome_arquivo}'...")
-        process = subprocess.run(['python', nome_arquivo], capture_output=True, text=True, check=True, encoding='utf-8')
+        process = subprocess.run(
+            ["python", nome_arquivo],
+            capture_output=True,
+            text=True,
+            check=True,
+            encoding="utf-8",
+        )
         print("--- Saída do Programa ---")
         print(process.stdout)
         if process.stderr:
@@ -145,17 +159,23 @@ def executar_codigo(nome_arquivo):
     except Exception as e:
         print(f"Nexo: Ocorreu um erro inesperado: {e}")
 
+
 def resumir_arquivo(nome_arquivo):
     conteudo_do_arquivo = ler_arquivo(nome_arquivo)
     if conteudo_do_arquivo:
         print("Nexo: Conteúdo lido com sucesso. Enviando para o Gemini para resumo...")
-        usar_gemini_para_tarefa("Resuma o seguinte texto de forma concisa e clara:", conteudo_do_arquivo)
+        usar_gemini_para_tarefa(
+            "Resuma o seguinte texto de forma concisa e clara:", conteudo_do_arquivo
+        )
     else:
         print(f"Nexo: Não foi possível ler o arquivo '{nome_arquivo}'.")
 
-def analisar_erro_com_gemini(mensagem_erro, codigo_contexto="Não há contexto de código disponível."):
+
+def analisar_erro_com_gemini(
+    mensagem_erro, codigo_contexto="Não há contexto de código disponível."
+):
     print("Nexo: Ocorreu um erro! Analisando o problema...")
-    
+
     prompt_analise = f"""
     Análise do erro:
     O programa Python encontrou o seguinte erro:
@@ -167,7 +187,7 @@ def analisar_erro_com_gemini(mensagem_erro, codigo_contexto="Não há contexto d
     Com base nesta informação, identifique a causa do erro e forneça o trecho de código corrigido.
     Responda apenas com o código Python corrigido e uma breve explicação do que foi alterado.
     """
-    
+
     if not API_KEY_GEMINI:
         print("Nexo: A chave de API do Gemini não está configurada.")
         return

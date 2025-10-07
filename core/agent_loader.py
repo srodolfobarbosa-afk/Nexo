@@ -4,6 +4,7 @@ Função principal: `discover_and_register_all()` — tenta importar todos os m�
 em `agentes`, busca classes que herdam de `core.agent_base.AgentBase`, tenta
 instanciá-las e registra via `core.agent_registry.register_agent_instance`.
 """
+
 import importlib
 import inspect
 import pkgutil
@@ -20,10 +21,13 @@ def discover_and_register_all():
         import agentes
     except Exception as e:
         # pacote não encontrado
-        register_agent('agentes_package', {'status': 'error', 'error': f'cannot_import_agentes: {e}'})
+        register_agent(
+            "agentes_package",
+            {"status": "error", "error": f"cannot_import_agentes: {e}"},
+        )
         return
 
-    pkg_path = getattr(agentes, '__path__', None)
+    pkg_path = getattr(agentes, "__path__", None)
     if not pkg_path:
         return
 
@@ -33,7 +37,7 @@ def discover_and_register_all():
             mod = importlib.import_module(full_name)
         except Exception as e:
             # register module as error placeholder
-            register_agent(name, {'status': 'error', 'error': f'import_error: {e}'})
+            register_agent(name, {"status": "error", "error": f"import_error: {e}"})
             continue
 
         # inspect module for AgentBase subclasses
@@ -42,13 +46,13 @@ def discover_and_register_all():
                 if obj is AgentBase:
                     continue
                 if issubclass(obj, AgentBase):
-                    agent_name = getattr(obj, 'name', obj.__name__)
+                    agent_name = getattr(obj, "name", obj.__name__)
                     try:
                         inst = obj()
-                        register_agent_instance(inst, {'status': 'idle'})
+                        register_agent_instance(inst, {"status": "idle"})
                     except Exception as e:
                         # if instantiation fails, register error
-                        register_agent(agent_name, {'status': 'error', 'error': str(e)})
+                        register_agent(agent_name, {"status": "error", "error": str(e)})
             except TypeError:
                 # obj is not inspectable as subclass
                 continue

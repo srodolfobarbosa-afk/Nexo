@@ -32,7 +32,10 @@ class AgentBase(ABC):
 
     def to_dict(self) -> Dict[str, Any]:
         """Serializa o estado mínimo do agente."""
-        return {"name": getattr(self, "name", self.__class__.__name__), "config": self.config}
+        return {
+            "name": getattr(self, "name", self.__class__.__name__),
+            "config": self.config,
+        }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "AgentBase":

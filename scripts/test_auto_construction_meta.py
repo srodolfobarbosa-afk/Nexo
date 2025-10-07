@@ -1,5 +1,6 @@
 import json
 import logging
+
 from core.auto_construction import AutoConstructionModule
 
 
@@ -13,7 +14,7 @@ def llm_stub(prompt, context):
         "description": "Criar um agente teste mínimo que retorne OK",
         "requirements": ["arquivo: agentes/test_agent.py", "metodo: handle"],
         "response": "Entendido. Vou construir a funcionalidade.",
-        "use_auto_construction": True
+        "use_auto_construction": True,
     }
     return json.dumps(simulated)
 
@@ -21,7 +22,11 @@ def llm_stub(prompt, context):
 def run_smoke():
     logging.basicConfig(level=logging.INFO)
     ac = AutoConstructionModule(llm_stub)
-    res = ac.auto_construct_from_meta("Contexto de teste: validar criação de agente.", "Criar AgenteTeste", allow_deploy=False)
+    res = ac.auto_construct_from_meta(
+        "Contexto de teste: validar criação de agente.",
+        "Criar AgenteTeste",
+        allow_deploy=False,
+    )
     print(json.dumps(res, indent=2, ensure_ascii=False))
 
 

@@ -11,11 +11,14 @@ class DebateEnvironment:
             falas.append((agent.name, fala))
         return falas
 
+
 # Exemplo de uso:
 if __name__ == "__main__":
+
     class Agent:
         def __init__(self, name):
             self.name = name
+
         def falar(self, problema):
             return f"Minha análise sobre '{problema}'... (simulação)"
 

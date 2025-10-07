@@ -10,6 +10,7 @@ without instantiating external clients or calling network-bound code.
 The script is intentionally conservative so it can run in GitHub Actions
 without secrets or long-running background processes.
 """
+
 import sys
 import traceback
 from pathlib import Path
@@ -19,13 +20,15 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
+
 def main():
     try:
         # Import locally to fail fast if syntax errors exist
-        from core.auto_construction import AutoConstructionModule
-        from core.llm_caller import LLMCaller
-        from core.github_integration import GitHubIntegration
         import os
+
+        from core.auto_construction import AutoConstructionModule
+        from core.github_integration import GitHubIntegration
+        from core.llm_caller import LLMCaller
 
         # Default lightweight check: build a meta-prompt
         context = "CI import check"
@@ -37,15 +40,27 @@ def main():
         print(prompt[:1000])
 
         # Active mode: only run if explicitly enabled via environment variable
-        enabled = os.environ.get("ENABLE_AUTO_CONSTRUCTION", "false").lower() in ("1", "true", "yes")
+        enabled = os.environ.get("ENABLE_AUTO_CONSTRUCTION", "false").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
         if not enabled:
-            print("[auto_builder] Active auto-construction disabled (set ENABLE_AUTO_CONSTRUCTION=true to enable)")
+            print(
+                "[auto_builder] Active auto-construction disabled (set ENABLE_AUTO_CONSTRUCTION=true to enable)"
+            )
             return 0
 
-        print("[auto_builder] Active auto-construction enabled — validating secrets and running pipeline")
+        print(
+            "[auto_builder] Active auto-construction enabled — validating secrets and running pipeline"
+        )
 
         # Minimal secret checks for LLM and GitHub
-        allow_deploy = os.environ.get("ALLOW_DEPLOY", "false").lower() in ("1", "true", "yes")
+        allow_deploy = os.environ.get("ALLOW_DEPLOY", "false").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
 
         # Prepare LLM config from env (support multiple providers)
         llm_config = {
@@ -57,31 +72,48 @@ def main():
 
         # Ensure at least one LLM key present
         if not any(llm_config.values()):
-            print("[auto_builder] No LLM credentials found in environment; aborting active auto-construction")
+            print(
+                "[auto_builder] No LLM credentials found in environment; aborting active auto-construction"
+            )
             return 0
 
         llm = LLMCaller(config=llm_config)
         ac = AutoConstructionModule(llm.call)
 
         # Build a sample objective or read from env
-        objective_text = os.environ.get("AUTO_CONSTRUCTION_OBJECTIVE", "Improve Nexo's health-check and minor docs update")
+        objective_text = os.environ.get(
+            "AUTO_CONSTRUCTION_OBJECTIVE",
+            "Improve Nexo's health-check and minor docs update",
+        )
 
-        result = ac.auto_construct_from_meta("CI automated run", objective_text, allow_deploy=allow_deploy)
+        result = ac.auto_construct_from_meta(
+            "CI automated run", objective_text, allow_deploy=allow_deploy
+        )
 
         print("[auto_builder] Auto-construction result summary:")
         try:
             import json
-            print(json.dumps(result if isinstance(result, dict) else {"result": str(result)}, indent=2)[:4000])
+
+            print(
+                json.dumps(
+                    result if isinstance(result, dict) else {"result": str(result)},
+                    indent=2,
+                )[:4000]
+            )
         except Exception:
             print(str(result))
 
         return 0
     except Exception as exc:  # pragma: no cover - runner/debug only
-        print("[auto_builder] WARNING: problem while running lightweight auto-builder check", file=sys.stderr)
+        print(
+            "[auto_builder] WARNING: problem while running lightweight auto-builder check",
+            file=sys.stderr,
+        )
         traceback.print_exc()
         # Do not fail the whole workflow; the original job intended to tolerate
         # missing auto-construction. Return success so deploy/test steps can proceed.
         return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 from core.llm_caller import LLMCaller
 
@@ -22,4 +22,4 @@ class NLHandler:
 
     def _build_prompt(self, message: str, context: List[str]) -> str:
         ctx = "\n".join(context[-6:]) if context else ""
-        return f"Context:\n{ctx}\n\nUser: {message}\nAssistant:" 
+        return f"Context:\n{ctx}\n\nUser: {message}\nAssistant:"

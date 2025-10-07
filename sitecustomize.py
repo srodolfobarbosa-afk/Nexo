@@ -1,5 +1,6 @@
-import sys
 import os
+import sys
+
 # Garantir que o diretório do workspace esteja no sys.path para que 'src' seja importável durante testes
 root = os.path.dirname(__file__)
 if root not in sys.path:

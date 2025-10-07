@@ -2,10 +2,11 @@
 
 Serve para expor estado atual dos agentes via API. Não substitui um store persistente.
 """
-import threading
-import logging
 
-logger = logging.getLogger('agent_registry')
+import logging
+import threading
+
+logger = logging.getLogger("agent_registry")
 
 _lock = threading.Lock()
 _agents = {}
@@ -13,8 +14,8 @@ _agents = {}
 
 def register_agent(name: str, meta: dict = None):
     with _lock:
-        _agents[name] = meta or {'status': 'active', 'meta': {}}
-        logger.info(f'Agent registered: {name}')
+        _agents[name] = meta or {"status": "active", "meta": {}}
+        logger.info(f"Agent registered: {name}")
 
 
 def register_agent_instance(agent, meta: dict = None):
@@ -23,13 +24,13 @@ def register_agent_instance(agent, meta: dict = None):
     Aceita qualquer objeto com atributo `name` e opcional `to_dict()`.
     """
     try:
-        name = getattr(agent, 'name', agent.__class__.__name__)
+        name = getattr(agent, "name", agent.__class__.__name__)
         info = meta or {}
-        if hasattr(agent, 'to_dict'):
-            info['meta'] = agent.to_dict()
+        if hasattr(agent, "to_dict"):
+            info["meta"] = agent.to_dict()
         register_agent(name, info)
     except Exception as e:
-        logger.error(f'Falha ao registrar instância de agente: {e}')
+        logger.error(f"Falha ao registrar instância de agente: {e}")
 
 
 def unregister_agent(name: str):
@@ -46,8 +47,8 @@ def get_agents():
 def update_agent_status(name: str, status: str, meta: dict = None):
     with _lock:
         if name in _agents:
-            _agents[name]['status'] = status
+            _agents[name]["status"] = status
             if meta:
-                _agents[name]['meta'].update(meta)
+                _agents[name]["meta"].update(meta)
         else:
-            _agents[name] = {'status': status, 'meta': meta or {}}
+            _agents[name] = {"status": status, "meta": meta or {}}

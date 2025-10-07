@@ -4,9 +4,14 @@ from core.agent_base import AgentBase
 class Memory(AgentBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = 'Memory'
+        self.name = "Memory"
         from core.api_search import APISearch
+
         self.api_search = APISearch()
 
     def handle(self, problema):
-        return {"agent": self.name, "input": problema, "result": f"Memory analisou: {problema}"}
+        return {
+            "agent": self.name,
+            "input": problema,
+            "result": f"Memory analisou: {problema}",
+        }

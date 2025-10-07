@@ -1,28 +1,32 @@
 import os
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 from supabase import Client
 
-from core.database import get_supabase_client
 from core.agent import Agent
+from core.database import get_supabase_client
 
 
 class OpportunityAnalyzer(Agent):
     def __init__(self, supabase: Client = None):
         super().__init__()
         self.supabase = supabase or get_supabase_client()
-        self.requirements = ['Acesso à base de dados do Nexo', 'Integração com APIs de mercado e tendências', 'Capacidade de análise de dados e previsão', 'Interface de usuário para visualização de resultados', 'Mecanismo de geração de relatórios']
+        self.requirements = [
+            "Acesso à base de dados do Nexo",
+            "Integração com APIs de mercado e tendências",
+            "Capacidade de análise de dados e previsão",
+            "Interface de usuário para visualização de resultados",
+            "Mecanismo de geração de relatórios",
+        ]
         from core.api_search import APISearch
-        self.api_search = APISearch()
 
+        self.api_search = APISearch()
 
     def analyze_market_trends(self, keywords: List[str]) -> Dict[str, Any]:
         try:
             # Simulação de integração com APIs de mercado e tendências
             # Substituir pela implementação real
-            trends = {
-                keyword: {"trend": "up", "score": 0.8} for keyword in keywords
-            }
+            trends = {keyword: {"trend": "up", "score": 0.8} for keyword in keywords}
             return trends
 
         except Exception as e:
@@ -33,11 +37,7 @@ class OpportunityAnalyzer(Agent):
         try:
             # Simulação de acesso à base de dados do Nexo
             # Substituir pela implementação real usando self.supabase
-            data = {
-                "users": 1000,
-                "transactions": 10000,
-                "revenue": 100000
-            }
+            data = {"users": 1000, "transactions": 10000, "revenue": 100000}
             return data
         except Exception as e:
             self.logger.error(f"Erro ao analisar dados do Nexo: {e}")
@@ -53,7 +53,6 @@ class OpportunityAnalyzer(Agent):
             self.logger.error(f"Erro ao gerar relatório: {e}")
             return "Erro ao gerar relatório."
 
-
     def run(self, keywords: List[str] = None) -> str:
         try:
             if not keywords:
@@ -67,5 +66,3 @@ class OpportunityAnalyzer(Agent):
         except Exception as e:
             self.logger.exception(f"Erro na execução do OpportunityAnalyzer: {e}")
             return f"Erro na execução: {e}"
-
-

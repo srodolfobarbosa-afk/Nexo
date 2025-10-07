@@ -1,12 +1,12 @@
-from typing import List, Dict, Any, Optional
 import logging
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 try:
+    from langchain.docstore.document import Document
     from langchain.embeddings import HuggingFaceEmbeddings
     from langchain.vectorstores import FAISS
-    from langchain.docstore.document import Document
 except Exception:
     # LangChain/FAISS missing -> tests expect RuntimeError when instantiating VectorMemory
     HuggingFaceEmbeddings = None
@@ -22,7 +22,9 @@ class VectorMemory:
 
     def __init__(self, embedding_model: Optional[str] = None):
         if HuggingFaceEmbeddings is None or FAISS is None:
-            raise RuntimeError("LangChain/FAISS not installed. Install the requirements.")
+            raise RuntimeError(
+                "LangChain/FAISS not installed. Install the requirements."
+            )
         self.embeddings = HuggingFaceEmbeddings(
             model_name=embedding_model or "sentence-transformers/all-MiniLM-L6-v2"
         )
@@ -38,7 +40,13 @@ class VectorMemory:
         results = self.store.similarity_search_with_score(query_text, k=k)
         out: List[Dict[str, Any]] = []
         for doc, score in results:
-            out.append({"text": doc.page_content, "metadata": doc.metadata, "score": float(score)})
+            out.append(
+                {
+                    "text": doc.page_content,
+                    "metadata": doc.metadata,
+                    "score": float(score),
+                }
+            )
         return out
 
 

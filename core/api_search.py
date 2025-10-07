@@ -3,9 +3,12 @@ Módulo utilitário para busca inteligente em APIs externas.
 Suporta Google, Gemini, OpenAI, APIs financeiras, Supabase, etc.
 Pode ser expandido para qualquer fonte externa.
 """
+
 import os
-import requests
+
 import google.generativeai as genai
+import requests
+
 
 class APISearch:
     def __init__(self):
@@ -39,8 +42,15 @@ class APISearch:
         if not self.openai_api_key:
             return "OPENAI_API_KEY não configurada."
         url = "https://api.openai.com/v1/chat/completions"
-        headers = {"Authorization": f"Bearer {self.openai_api_key}", "Content-Type": "application/json"}
-        payload = {"model": "gpt-3.5-turbo", "messages": [{"role": "user", "content": prompt}], "max_tokens": 1000}
+        headers = {
+            "Authorization": f"Bearer {self.openai_api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": "gpt-3.5-turbo",
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 1000,
+        }
         resp = requests.post(url, json=payload, headers=headers)
         if resp.status_code == 200:
             return resp.json()["choices"][0]["message"]["content"]
@@ -51,7 +61,10 @@ class APISearch:
         if not self.supabase_url or not self.supabase_key:
             return "SUPABASE_URL ou SUPABASE_KEY não configurados."
         url = f"{self.supabase_url}/rest/v1/{table}?{query}"
-        headers = {"apikey": self.supabase_key, "Authorization": f"Bearer {self.supabase_key}"}
+        headers = {
+            "apikey": self.supabase_key,
+            "Authorization": f"Bearer {self.supabase_key}",
+        }
         resp = requests.get(url, headers=headers)
         if resp.status_code == 200:
             return resp.json()

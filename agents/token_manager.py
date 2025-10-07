@@ -1,5 +1,6 @@
 import os
 from typing import Optional
+
 try:
     # Prefer absolute import so tests and CI can import packages from repo root
     from autoconstructor.secrets_provider import get_secret

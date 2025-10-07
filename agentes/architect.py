@@ -4,7 +4,7 @@ from core.agent_base import AgentBase
 class ArchitectAI(AgentBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.name = 'Architect'
+        self.name = "Architect"
 
     def handle(self, blueprint_request: str):
         # placeholder: gerar blueprint técnico

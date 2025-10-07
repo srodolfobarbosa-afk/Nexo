@@ -1,8 +1,9 @@
 import asyncio
 import logging
-from supabase import Client, create_client
-from typing import Dict, Any
+from typing import Any, Dict
+
 import yfinance as yf
+from supabase import Client, create_client
 
 logging.basicConfig(level=logging.INFO)
 
@@ -11,7 +12,9 @@ SUPABASE_KEY = None
 
 
 class MarketWatcherEconomico:
-    def __init__(self, supabase_url: str | None = None, supabase_key: str | None = None):
+    def __init__(
+        self, supabase_url: str | None = None, supabase_key: str | None = None
+    ):
         self.supabase: Client | None = None
         if supabase_url and supabase_key:
             try:
@@ -26,7 +29,9 @@ class MarketWatcherEconomico:
         # Apenas placeholder; função assíncrona caso a biblioteca supabase seja usada em modo async
         logging.info("MarketWatcherEconomico: connect_to_database (placeholder)")
 
-    async def fetch_market_data(self, symbol: str, source: str = "yfinance") -> Dict[str, Any]:
+    async def fetch_market_data(
+        self, symbol: str, source: str = "yfinance"
+    ) -> Dict[str, Any]:
         try:
             if source not in self.data_sources:
                 raise ValueError(f"Fonte de dados '{source}' não disponível.")
@@ -35,7 +40,12 @@ class MarketWatcherEconomico:
             data = ticker.history(period="1d")
             if data is None or data.empty:
                 return {}
-            return {"Close": data["Close"], "Open": data["Open"], "High": data["High"], "Low": data["Low"]}
+            return {
+                "Close": data["Close"],
+                "Open": data["Open"],
+                "High": data["High"],
+                "Low": data["Low"],
+            }
         except Exception as e:
             logging.error(f"Erro ao buscar dados de mercado: {e}")
             return {}
@@ -55,7 +65,10 @@ class MarketWatcherEconomico:
                 except Exception:
                     return {"analysis": "Dados insuficientes"}
 
-            analysis = {"close_price": close_price, "recommendation": "Compra" if close_price < 100 else "Venda"}
+            analysis = {
+                "close_price": close_price,
+                "recommendation": "Compra" if close_price < 100 else "Venda",
+            }
             return analysis
         except Exception as e:
             logging.error(f"Erro na análise de dados de mercado: {e}")
@@ -66,7 +79,11 @@ class MarketWatcherEconomico:
             if not self.supabase:
                 logging.warning("Supabase não configurado. Ignorando persistência.")
                 return
-            await self.supabase.table('market_data').insert({'symbol': symbol, 'data': data}).execute()
+            await (
+                self.supabase.table("market_data")
+                .insert({"symbol": symbol, "data": data})
+                .execute()
+            )
         except Exception as e:
             logging.error(f"Erro ao armazenar dados no Supabase: {e}")
 
@@ -81,7 +98,7 @@ class MarketWatcherEconomico:
                 analysis = await self.analyze_market_data(market_data)
                 await self.store_data(analysis, "AAPL")
 
-                if analysis.get('recommendation') == 'Compra':
+                if analysis.get("recommendation") == "Compra":
                     await self.send_alerts("Oportunidade de compra identificada!")
                 await asyncio.sleep(60)
             except Exception as e:

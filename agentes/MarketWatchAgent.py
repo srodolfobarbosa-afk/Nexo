@@ -1,13 +1,11 @@
-import os
-from dotenv import load_dotenv
-from supabase import Client, create_client
-import os
 import logging
+import os
+import time
+from typing import Any, Dict, List
+
+import yfinance as yf  # Exemplo de API, pode ser substituída
 from dotenv import load_dotenv
 from supabase import Client, create_client
-from typing import Dict, List, Any
-import time
-import yfinance as yf  # Exemplo de API, pode ser substituída
 
 load_dotenv()
 
@@ -27,7 +25,9 @@ class MarketWatchAgent:
                 logging.info("Conectado ao Supabase.")
             else:
                 self.supabase = None
-                logging.info("Supabase não configurado (variáveis de ambiente ausentes).")
+                logging.info(
+                    "Supabase não configurado (variáveis de ambiente ausentes)."
+                )
         except Exception as e:
             logging.error(f"Erro ao conectar ao Supabase: {e}")
             self.supabase = None
@@ -57,7 +57,9 @@ class MarketWatchAgent:
             logging.error(f"Erro ao buscar dados de {ticker}: {e}")
             return {}
 
-    def detect_large_variation(self, previous_close: float, current_close: float, threshold: float = 0.05) -> bool:
+    def detect_large_variation(
+        self, previous_close: float, current_close: float, threshold: float = 0.05
+    ) -> bool:
         if previous_close == 0:
             return False
         variation = abs((current_close - previous_close) / previous_close)
@@ -67,7 +69,9 @@ class MarketWatchAgent:
         """Placeholder para notificações; atualmente registra via logging."""
         logging.info(f"Notificação: {message}")
 
-    def monitor_market(self, tickers: List[str], threshold: float = 0.05, interval: int = 60):
+    def monitor_market(
+        self, tickers: List[str], threshold: float = 0.05, interval: int = 60
+    ):
         try:
             previous_data: Dict[str, Dict[str, Any]] = {}
             while True:
@@ -76,7 +80,9 @@ class MarketWatchAgent:
                     if current_data and "close" in current_data:
                         if ticker in previous_data:
                             prev_close = previous_data[ticker].get("close")
-                            if prev_close is not None and self.detect_large_variation(prev_close, current_data["close"], threshold):
+                            if prev_close is not None and self.detect_large_variation(
+                                prev_close, current_data["close"], threshold
+                            ):
                                 message = f"Grande variação detectada em {ticker}: {current_data['close']}"
                                 self.notify(message)
                         previous_data[ticker] = current_data

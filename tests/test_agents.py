@@ -1,9 +1,10 @@
-
 import importlib
-import pytest
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import pytest
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 def test_nexogenesis_import():
@@ -17,8 +18,8 @@ def test_nexogenesis_import():
 def test_agente_resposta():
     """Simula uma resposta de agente"""
     from agentes.NexoGenesis import NexoGenesisAgent
+
     agente = NexoGenesisAgent()
     resposta = agente.processar("teste simples")
     assert isinstance(resposta, str)
     assert len(resposta) > 0
-
