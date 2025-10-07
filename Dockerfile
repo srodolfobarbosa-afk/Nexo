@@ -40,4 +40,4 @@ ENV START_MISSION_RUNNER=true
 USER root
 
 # startup recomendado (override via ENTRYPOINT/CMD em produção)
-CMD ["gunicorn", "src.ws_server:app", "--bind", "0.0.0.0:8000", "--workers", "1", "--timeout", "120"]
+CMD ["gunicorn", "src.ws_server:app", "--bind", "0.0.0.0:$PORT", "--workers", "1", "--timeout", "120"]

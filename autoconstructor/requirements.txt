@@ -1,5 +1,5 @@
 fastapi==0.95.2
-uvicorn[standard]==0.22.0
+uvicorn[standard]>=0.23
 requests==2.31.0
 PyGithub==1.77
 transformers==4.36.2

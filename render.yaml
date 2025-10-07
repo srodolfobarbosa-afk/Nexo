@@ -2,11 +2,13 @@ services:
   - type: web
     name: ecoguardians-nexo
     env: python
-    buildCommand: pip install -r requirements.txt && playwright install && mkdir -p src/static && cp -r app/static/* src/static/
-    startCommand: gunicorn --bind 0.0.0.0:$PORT src.ws_server:app
+  buildCommand: pip install -r requirements.txt && playwright install && mkdir -p src/static && cp -r app/static/* src/static/
+  startCommand: gunicorn --bind 0.0.0.0:$PORT src.ws_server:app --workers 1 --timeout 120
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.12.0
+      - key: START_MISSION_RUNNER
+        value: "true"
       - key: APP_ENV
         value: PROD
       - key: SUPABASE_URL

@@ -33,3 +33,11 @@ logs/
 .secrets.*
 memoria_curto_prazo.json
 
+# local env & venv
+.env
+.venv/
+__pycache__/
+*.pyc
+# agent temp files
+/tmp/*.patch
+

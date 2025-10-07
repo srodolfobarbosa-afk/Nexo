@@ -1,6 +1,6 @@
-import os
 import logging
-from typing import Optional, Dict, Any
+import os
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger("llm_adapter")
 
@@ -31,7 +31,11 @@ def _call_openai(prompt: str, **kwargs) -> Dict[str, Any]:
         import openai
 
         openai.api_key = api_key
-        resp = openai.ChatCompletion.create(model=kwargs.get("model", "gpt-4o"), messages=[{"role":"user","content":prompt}], max_tokens=kwargs.get("max_tokens", 512))
+        resp = openai.ChatCompletion.create(
+            model=kwargs.get("model", "gpt-4o"),
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=kwargs.get("max_tokens", 512),
+        )
         return {"text": resp.choices[0].message.content}
     except Exception as e:
         logger.exception("OpenAI call failed")

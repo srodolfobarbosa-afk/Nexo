@@ -3,9 +3,11 @@
 Requires Redis running (e.g., via docker-compose). This file provides a
 job function and a minimal scheduler example.
 """
-from rq import Queue
-from redis import Redis
+
 import time
+
+from redis import Redis
+from rq import Queue
 
 redis_conn = Redis(host="redis", port=6379, db=0)
 q = Queue("default", connection=redis_conn)

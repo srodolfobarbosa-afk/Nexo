@@ -1,0 +1,11 @@
+tests/__init__.py: 
+
+ 
+
+tests/test_basic.py: 
+def test_basic():
+    assert 1 + 1 == 2
+
+pytest.ini: 
+[pytest]
+testpaths = tests
