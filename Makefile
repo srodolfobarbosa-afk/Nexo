@@ -14,3 +14,6 @@ run:
 lint:
 	python -m pip install ruff
 	ruff check .
+
+init:
+	chmod +x init_workspace.sh && ./init_workspace.sh --install
