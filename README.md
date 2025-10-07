@@ -23,6 +23,12 @@ pip install -r requirements_dev.txt
 pytest -q
 ```
 
+5. Inicializar banco local (SQLite) e seed mínimo:
+
+```bash
+python scripts/init_db.py
+```
+
 3. Rodar localmente com docker-compose:
 
 ```bash
