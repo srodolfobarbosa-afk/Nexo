@@ -1,0 +1,27 @@
+name: Autoconstructor Agent (dry-run)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *' # diário às 03:00 UTC (ajuste conforme desejar)
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install gitpython python-dotenv openai
+      - name: Run agent (DRY_RUN)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DRY_RUN: "true"
+        run: |
+          python agents/autoconstructor_agent.py
