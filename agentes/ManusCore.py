@@ -10,8 +10,7 @@ Este agente é um scaffold operacional que contém rotinas para:
 """
 import os
 import json
-import time
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 
 from core.memory import EcoMemory
 from agentes.llm_provider import LLMProvider

@@ -1,12 +1,11 @@
-from typing import Any, Dict, Optional
-import time
+from typing import Any, Dict
 
 from core.memory import EcoMemory
 
 
 class EcoHunterAgent:
-    '''Auto-generated agent: EcoHunter
-    Description: EcoHunter: buscar parceiros em Twitter e Reddit, salvar leads e notificar via email se encontrar correspondencias relevantes.'''
+    """Auto-generated agent: EcoHunter
+    Description: EcoHunter: buscar parceiros em Twitter e Reddit, salvar leads e notificar via email se encontrar correspondencias relevantes."""
 
     def __init__(self):
         self.memory = EcoMemory()
@@ -23,5 +22,5 @@ class EcoHunterAgent:
         # def search_twitter(query): pass
         # Placeholder: connect to Reddit API (praw) and search subreddits
         # Example: persist a dummy lead to memory
-        self.memory.add_record(topic="agents", payload={'sample':'value'})
+        self.memory.add_record(topic="agents", payload={"sample":"value"})
         return results

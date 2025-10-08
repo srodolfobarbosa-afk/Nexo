@@ -1,5 +1,4 @@
 import logging
-import os
 
 from dotenv import load_dotenv
 
@@ -23,7 +22,7 @@ class EcoFinanceAgent:
             balance = self.get_balance()
             logging.info(f"Saldo atual: {balance}")
             self.log_audit("run", {"balance": balance})
-        except Exception as e:
+        except Exception:
             logging.exception("Erro durante execução do EcoFinanceAgent")
 
     def get_balance(self) -> float:

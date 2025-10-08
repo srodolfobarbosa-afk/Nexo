@@ -97,14 +97,14 @@ class Coder:
         lines.append("")
         lines.append(f"class {class_name}:")
         # use single-quoted triple for docstring content to avoid conflicts
-        desc = spec.get('description', '').replace('\n', ' ')[:1000]
+        desc = spec.get("description", "").replace("\n", " ")[:1000]
         lines.append(f"    '''Auto-generated agent: {name}\n    Description: {desc}'''")
         lines.append("")
         lines.append("    def __init__(self):")
         lines.append("        self.memory = EcoMemory()")
         lines.append("")
         lines.append("    def get_status(self) -> Dict[str, Any]:")
-        lines.append('        return ' + '{' + f'"{name}": "idle"' + '}')
+        lines.append("        return " + "{" + f'"{name}": "idle"' + "}")
         lines.append("")
         lines.append("    def run_once(self):")
         lines.append("        \"\"\"Executes one cycle of the agent's responsibilities.\"\"\"")

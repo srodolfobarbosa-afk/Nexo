@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import re
 from datetime import datetime
 
 # Evitar imports pesados no topo: importe sob demanda dentro dos métodos.
