@@ -1,0 +1,71 @@
+## Full (heavy) requirements for optional installs - adjusted for Pydantic v2
+
+# Core web
+flask>=2.2
+flask-sock>=0.5
+flask-cors>=3.0
+gunicorn>=20.1
+uvicorn>=0.23
+websockets>=11.0
+
+# System/monitoring
+psutil>=5.9
+
+# HTTP / utils
+requests>=2.28
+python-dotenv>=1.0
+
+# Databases and persistence
+supabase>=2.0
+psycopg2-binary>=2.9
+# Ensure SQLAlchemy >=2 to avoid pydantic v1 constraints
+sqlalchemy>=2.0
+
+# LLM providers
+google-generativeai>=0.8
+openai>=0.27
+groq>=0.1
+ollama>=0.1
+
+# Vector DB / Embeddings
+langchain>=0.2
+chromadb>=0.3
+sentence-transformers>=2.2
+faiss-cpu>=1.7
+
+# Additional AI / Data libraries (manifesto)
+transformers>=4.36
+numpy>=1.26
+pandas>=2.2
+scikit-learn>=1.3
+xgboost>=2.1
+lightgbm>=4.4
+
+
+# NLP / scraping
+beautifulsoup4>=4.12
+vaderSentiment>=3.3
+playwright>=1.36
+
+# Bot / Telegram
+pyTelegramBotAPI>=4.10
+
+# Security & auth
+python-jose>=3.3
+cryptography>=41.0
+pyjwt>=2.8
+docker>=6.1
+
+# Testing
+pytest>=8.0
+
+# Packaging helpers
+setuptools
+wheel
+pydantic>=2.0
+
+
+# Additional requested explicit pins
+# fastapi removed by default in heavy installs to avoid pydantic v1 conflicts
+requests==2.31.0
+PyGithub>=1.59.1,<2
