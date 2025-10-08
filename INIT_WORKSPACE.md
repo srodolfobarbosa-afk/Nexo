@@ -26,3 +26,18 @@ Próximos passos sugeridos (opcionais)
 
 - Adicionar um `Makefile` target `init` que chame `./init_workspace.sh --install`.
 - Configurar integração com Docker para evitar problemas de build local de dependências pesadas.
+
+## Deploy para Render
+
+O repositório inclui um workflow GitHub Actions (`.github/workflows/render-deploy.yml`) que tenta disparar um deploy no Render quando houver push para a branch `main`.
+
+Passos mínimos para habilitar:
+
+- Ative a integração GitHub no painel do Render (recomendado). Assim, pushs para a branch configurada disparam deploys automaticamente.
+- Ou configure os GitHub Secrets abaixo para permitir que o workflow chame a API do Render:
+   - `RENDER_SERVICE_ID` — ID do serviço no Render (ex: srv-abcde12345)
+   - `RENDER_API_TOKEN` — API token do Render com permissões de deploy
+
+Com os secrets configurados, o workflow fará um POST para `https://api.render.com/v1/services/{service_id}/deploys` para iniciar o deploy.
+
+Nota: o `render.yaml` no repositório contém a configuração esperada pelo Render. Em ambientes com dependências pesadas (PyTorch, triton, sentence-transformers), prefira usar `requirements_prod.txt` no seu build para imagens menores.

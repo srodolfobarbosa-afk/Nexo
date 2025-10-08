@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.12-slim AS builder
+FROM python:3.12-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
@@ -12,8 +12,27 @@ RUN apt-get update \
 
 # copiar apenas requirements para cache eficiente
 COPY requirements.txt /app/requirements.txt
+COPY requirements_clean.txt /app/requirements_clean.txt
+COPY requirements_prod.txt /app/requirements_prod.txt
+
+# build arg to explicitly allow heavy installs (default: disabled)
+ARG FORCE_ALLOW_HEAVY_INSTALL=false
+
+# Install Python build tools and dependencies from requirements_prod.txt by default.
+# If you really need to install the full/clean requirements (heavier), pass
+# --build-arg FORCE_ALLOW_HEAVY_INSTALL=true to the docker build command.
 RUN python -m pip install --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r /app/requirements.txt
+    if [ -f /app/requirements_prod.txt ]; then \
+        echo "Installing production requirements..." && \
+        pip install --no-cache-dir -r /app/requirements_prod.txt; \
+    elif [ "$FORCE_ALLOW_HEAVY_INSTALL" = "true" ] && [ -f /app/requirements_clean.txt ]; then \
+        echo "FORCE_ALLOW_HEAVY_INSTALL=true -> installing requirements_clean.txt (this may be very large)" && \
+        pip install --no-cache-dir -r /app/requirements_clean.txt; \
+    else \
+        echo "No production requirements found and heavy installs are disabled. To allow heavy installs, rebuild with '--build-arg FORCE_ALLOW_HEAVY_INSTALL=true' or add a requirements_prod.txt." && exit 1; \
+    fi && \
+    # ensure pip caches/temporary files are cleaned
+    python -m pip cache purge || true
 
 FROM python:3.12-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
