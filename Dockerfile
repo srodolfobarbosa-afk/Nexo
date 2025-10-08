@@ -16,20 +16,20 @@ COPY requirements_clean.txt /app/requirements_clean.txt
 COPY requirements_prod.txt /app/requirements_prod.txt
 
 # build arg to explicitly allow heavy installs (default: disabled)
-ARG FORCE_ALLOW_HEAVY_INSTALL=false
+ARG INSTALL_FULL=false
 
 # Install Python build tools and dependencies from requirements_prod.txt by default.
-# If you really need to install the full/clean requirements (heavier), pass
-# --build-arg FORCE_ALLOW_HEAVY_INSTALL=true to the docker build command.
+# If you need to install the full/heavy requirements, pass
+# --build-arg INSTALL_FULL=true to the docker build command.
 RUN python -m pip install --upgrade pip setuptools wheel && \
-    if [ -f /app/requirements_prod.txt ]; then \
+    if [ "$INSTALL_FULL" = "true" ] && [ -f /app/requirements_full.txt ]; then \
+        echo "INSTALL_FULL=true -> installing requirements_full.txt (heavy)" && \
+        pip install --no-cache-dir -r /app/requirements_full.txt; \
+    elif [ -f /app/requirements_prod.txt ]; then \
         echo "Installing production requirements..." && \
         pip install --no-cache-dir -r /app/requirements_prod.txt; \
-    elif [ "$FORCE_ALLOW_HEAVY_INSTALL" = "true" ] && [ -f /app/requirements_clean.txt ]; then \
-        echo "FORCE_ALLOW_HEAVY_INSTALL=true -> installing requirements_clean.txt (this may be very large)" && \
-        pip install --no-cache-dir -r /app/requirements_clean.txt; \
     else \
-        echo "No production requirements found and heavy installs are disabled. To allow heavy installs, rebuild with '--build-arg FORCE_ALLOW_HEAVY_INSTALL=true' or add a requirements_prod.txt." && exit 1; \
+        echo "No production requirements found and INSTALL_FULL not enabled. To install heavy deps, rebuild with '--build-arg INSTALL_FULL=true' or add a requirements_prod.txt." && exit 1; \
     fi && \
     # ensure pip caches/temporary files are cleaned
     python -m pip cache purge || true
