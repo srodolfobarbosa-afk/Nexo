@@ -1,104 +1,201 @@
-Nexo — sistema de agentes orquestradores
+# Nexo — sistema de agentes orquestradores
 
 Este repositório contém o projeto Nexo: conjunto de agentes autônomos e ferramentas de orquestração.
 
-Resumo rápido — o que fiz nesta iteração:
+## Resumo rápido — o que fiz nesta iteração:
 - Corrigi imports que impediam a suíte de testes de rodar.
 - Adicionei etapas de lint/format, Dockerfile multistage e docker-compose para desenvolvimento.
 
-Principais comandos locais
+## Instruções de Configuração, Instalação e Execução
 
-1. Instalar dependências de desenvolvimento (recomendado em um virtualenv):
+### 1) Requisitos mínimos
+- Python 3.11+ (recomendado 3.12)
+- Git
+- Acesso a um projeto Supabase (opcional para persistência/produção)
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements_dev.txt
+### 2) Preparar ambiente local (desenvolvimento)
+- Copie o template de variáveis de ambiente e edite os valores sensíveis:
+
+  ```bash
+  cp .env.example .env
+  # Edite .env e coloque suas chaves (NUNCA comite .env)
+  ```
+
+- Crie e ative um virtualenv e instale dependências:
+
+  ```bash
+  python -m venv .venv
+  source .venv/bin/activate
+  python -m pip install --upgrade pip
+  pip install -r requirements.txt
+  ```
+
+### 3) Principais comandos locais e execução rápida (desenvolvimento)
+
+- **Instalar dependências de desenvolvimento** (recomendado em um virtualenv):
+
+  ```bash
+  python -m venv .venv
+  source .venv/bin/activate
+  python -m pip install --upgrade pip
+  pip install -r requirements_dev.txt
+  ```
+
+- **Rodar testes**:
+
+  ```bash
+  export PYTHONPATH=$(pwd)
+  pytest -q
+  ```
+
+- **Inicializar banco local (SQLite) e seed mínimo**:
+
+  ```bash
+  python scripts/init_db.py
+  ```
+
+- **Rodar localmente com docker-compose**:
+
+  ```bash
+  # Build e up (development)
+  docker-compose up --build
+  ```
+
+- **Build Docker standalone**:
+
+  ```bash
+  docker build -t nexo:latest .
+  ```
+
+- **Rodar o sistema integrado em background** (script que automatiza venv/install/tests/start):
+
+  ```bash
+  ./scripts/auto_run.sh
+  ```
+
+  Depois veja logs em `logs/integrated.log`:
+
+  ```bash
+  tail -f logs/integrated.log
+  ```
+
+### 4) Variáveis de ambiente importantes
+- `TELEGRAM_BOT_TOKEN` — token do bot Telegram (dev/prod)
+- `SUPABASE_URL`, `SUPABASE_KEY` — credenciais Supabase (se usar Supabase)
+- `JWT_SECRET` — segredo forte para tokens JWT (NÃO usar valor padrão)
+
+**Observação de segurança**: se `JWT_SECRET` estiver ausente ou com o valor padrão placeholder, o processo de inicialização irá falhar com uma mensagem clara. Configure um segredo robusto em produção.
+
+### 5) Banco/Supabase
+- Há um arquivo `supabase_schema.sql` com esquema sugerido. Para produção, aplique o SQL no seu projeto Supabase. Alguns testes/integrações assumem que certas tabelas existem (tasks, agent_logs, evolution_attempts, etc.).
+
+### 6) Deploy (Render / Heroku / Docker)
+- O `Dockerfile` e `Procfile` existem como exemplos. Em plataformas como Render, defina variáveis de ambiente seguras (incl. `JWT_SECRET`) e configure a porta conforme o provedor.
+- Em Render, defina a porta via variável `PORT` e o comando de startup padrão já presente no `Procfile`/`start.sh`.
+
+### 7) Troubleshooting rápido
+- Erros de schema Supabase: verifique `supabase_schema.sql` e aplique no projeto Supabase (ou pule testes de integração configurando as variáveis).
+- Dependências pesadas (torch/playwright): para desenvolvimento rápido use um `requirements_dev.txt` mais enxuto (opção futura).
+
+### 8) Próximos passos sugeridos
+- Criar `requirements_dev.txt` para desenvolvimento leve
+- Adicionar CI (GitHub Actions) com testes e linter
+- Criar script/rotina automática para aplicar `supabase_schema.sql` com confirmação interativa
+
+## Integração Render (Cloud)
+
+Para usar o CloudManager, defina as variáveis de ambiente:
+
+- `RENDER_API_KEY`: Token de acesso à API do Render
+- `RENDER_SERVICE_ID`: ID do serviço Render
+
+Endpoints usados:
+- `GET https://api.render.com/v1/services/{service_id}` (status)
+- `POST https://api.render.com/v1/services/{service_id}/restart` (reiniciar)
+- `POST https://api.render.com/v1/services/{service_id}/deploy` (deploy nova imagem)
+
+## SQL para criar tabela evolution_attempts no Supabase
+
+```sql
+CREATE TABLE evolution_attempts (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	timestamp TEXT,
+	cycle_number INTEGER,
+	mission_prompt TEXT,
+	llm_response_raw TEXT,
+	success BOOLEAN,
+	reason_for_failure TEXT,
+	details TEXT
+);
 ```
 
-2. Rodar testes:
+# EcoGuardians - Centro de Comando de Agentes de IA
 
-```bash
-pytest -q
-```
+## Funcionalidades
 
-5. Inicializar banco local (SQLite) e seed mínimo:
+- **Monitor visual dividido em 3 partes:** exibe resultados dos agentes em tempo real (imagens, gráficos, status, etc).
+- **Status dos agentes:** cartões com nome, status, CPU/RAM, tarefas/hora e ações rápidas.
+- **Dashboard financeiro:** gráficos dinâmicos de receita, despesa e ROI.
+- **Histórico de falhas e sucessos:** filtragem avançada por nível, agente e tipo, destaques visuais e download de logs.
+- **Mapa de orquestração de tarefas:** visualização do fluxo de trabalho dos agentes.
+- **Gerenciamento de API Keys:** adicionar, revogar e visualizar chaves diretamente pelo painel.
 
-```bash
-python scripts/init_db.py
-```
+## Como rodar localmente
 
-3. Rodar localmente com docker-compose:
+1. Instale as dependências:
+	```bash
+	pip install flask flask-sock psutil
+	```
+2. Execute o backend WebSocket:
+	```bash
+	python3 src/ws_server.py
+	```
+3. Acesse a interface em [http://localhost:8000](http://localhost:8000)
 
-```bash
-# Build e up (development)
-docker-compose up --build
-```
+## CI/CD
+- O projeto possui workflow automatizado para lint, testes e deploy no Render.
+- Todas as mudanças são versionadas e documentadas.
 
-4. Build Docker standalone:
+## Estrutura recomendada
+- `app/static/index.html` — Interface principal
+- `app/static/script.js` — Lógica dinâmica do frontend
+- `src/ws_server.py` — Backend WebSocket
+- `.env` — Chaves de API e configurações
 
-```bash
-docker build -t nexo:latest .
-```
+## Observações
+- O painel é proativo: qualquer agente pode enviar visualizações para o monitor.
+- Logs, status, financeiro e tarefas são atualizados em tempo real.
+- API Keys são gerenciadas de forma segura e flexível.
 
-Notas de deploy
+## Segurança e Variáveis de Ambiente
 
-- Existe workflow GitHub Actions básico em `.github/workflows/consolidated-ci.yml` que roda lint → tests → build.
-- Deploy para Render está disponível via secrets `RENDER_SERVICE_ID` e `RENDER_API_KEY`.
+- **Nunca comite chaves ou segredos diretamente no repositório.** Utilize arquivos `.env` para desenvolvimento local (que devem ser ignorados pelo Git) e configure secrets no GitHub Actions ou no seu provedor de deploy (como Render) para ambientes de CI/CD e produção.
+- **Rotação de Chaves**: Se houver suspeita de comprometimento de chaves, siga os passos em `SECURITY_SETUP.md` para rotacioná-las e reemití-las. Utilize o script `scripts/add_secrets.sh` para gerenciar secrets de forma segura.
 
-Segurança e variáveis de ambiente
+### Supabase Auth (recomendado para produção)
 
-- Nunca comite chaves. Use `.env` localmente e configure secrets no GitHub para CI/CD.
+1. Crie um projeto Supabase e habilite a autenticação (OAuth2 / email).
+2. Adicione `SUPABASE_URL` e `SUPABASE_KEY` como secrets no seu ambiente de deploy (Render / GitHub Secrets).
+3. Defina `USE_SUPABASE_AUTH=1` no seu ambiente para forçar a aplicação a validar JWTs via Supabase JWKS.
+4. **IMPORTANTE**: Defina um `JWT_SECRET` forte para qualquer token HS256 de fallback e **nunca o comite**.
 
-Problemas pendentes
+Quando `USE_SUPABASE_AUTH=1`, a rota de desenvolvimento `/auth/token` é desabilitada e o serviço verificará tokens RS256 publicados pelo Supabase.
 
-- Alguns módulos assumem dependências pesadas em tempo de import. Refatorei os pontos críticos para lazy-imports nos agentes essenciais.
-- Recomendado revisar `requirements.txt` de produção (algumas bibliotecas do manifesto são apenas opcionais).
+### Docker e Segurança
 
-Para detalhes completos do que foi alterado, consulte o CHANGELOG.md e os commits no repositório.
+- **Build da imagem Docker** (exemplo):
 
-## Instruções de Configuração
+  ```bash
+  docker build -t nexo:latest .
+  ```
 
-(Adicione aqui as instruções de configuração do README_UPDATE.md)
+- **Execução em desenvolvimento**:
 
-## Instruções de Instalação
+  ```bash
+  docker run --env-file .env -p 8000:8000 nexo:latest
+  ```
 
-(Adicione aqui as instruções de instalação do README_UPDATE.md)
-
-## Instruções de Execução
-
-(Adicione aqui as instruções de execução do README_UPDATE.md)
-
-## Instruções de Testes
-
-(Adicione aqui as instruções de testes do README_UPDATE.md)
-
-## Instruções de Deploy Automático
-
-(Adicione aqui as instruções de deploy automático do README_UPDATE.md)
-
-## Quick local / production notes
-
-- DO NOT commit real secrets. Use `.env` (ignored) and a secrets manager in production.
-- Build the Docker image (example):
-
-	docker build -t nexo:latest .
-
-- Run (development):
-
-	docker run --env-file .env -p 8000:8000 nexo:latest
-
-- CI: GitHub Actions runs tests and a secrets scan. Ensure you rotate any compromised keys before pushing.
-
-## Supabase Auth (recommended for production)
-
-1. Create a Supabase project and enable Auth (OAuth2 / email).
-2. Add `SUPABASE_URL` and `SUPABASE_KEY` to your deployment secrets (Render / GitHub Secrets).
-3. Set `USE_SUPABASE_AUTH=1` in your environment to force the app to validate JWTs via Supabase JWKS.
-4. IMPORTANT: set a strong `JWT_SECRET` for any HS256 fallback tokens and never commit it.
-
-When `USE_SUPABASE_AUTH=1`, the `/auth/token` dev route is disabled and the service will verify RS256 tokens published by Supabase.
+- **CI/CD**: O GitHub Actions executa testes e uma varredura de secrets. Certifique-se de rotacionar quaisquer chaves comprometidas antes de fazer push.
 
 ## Catálogo de Agentes
 
@@ -112,8 +209,4 @@ Próximos passos sugeridos:
 - Implementar a lógica detalhada em cada skeleton.
 - Atualizar `core/agent_registry.py` para instanciar e registrar automaticamente agentes em startup.
 - Criar testes unitários em `tests/` para cada agente (happy path + 1 edge case).
-
-### Segurança: chaves expostas
-
-Se você colou chaves/segredos neste repositório (ou em qualquer chat público), **assuma que elas estão comprometidas**. Rode os passos em `SECURITY_SETUP.md` para rotacionar e reemitir chaves. Use o script `scripts/add_secrets.sh` para publicar secrets no GitHub/Vercel via CLI (execute localmente e NÃO comite suas chaves).
 
