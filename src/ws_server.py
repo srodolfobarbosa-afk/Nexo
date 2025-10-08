@@ -32,7 +32,7 @@ from core import sqlite_client
 from core.agent_loader import discover_and_register_all
 from core.agent_registry import get_agents, register_agent
 from core.database import get_supabase_client
-from core.jwt_auth import create_token, require_jwt, verify_token
+from core.jwt_auth import create_token, require_jwt
 from core.mission_runner import start_background
 from agentes.EcoMetrics import EcoMetrics
 from agentes.ManusCore import ManusCore
@@ -360,7 +360,7 @@ def api_manus_run_daily():
         return make_response(jsonify({"error": "internal_error"}), 500)
 
 
-@app.route("/api/manus/import", methods=["POST"]) 
+@app.route("/api/manus/import", methods=["POST"])
 @require_jwt
 def api_manus_import():
     """Importa um bundle de conhecimento para Manus residente.
@@ -387,7 +387,7 @@ def api_manus_import():
 
         # tentar registrar automaticamente o módulo residente no registry
         try:
-            from core.agent_registry import register_agent_instance, import_and_register_module
+            from core.agent_registry import import_and_register_module
 
             try:
                 # tentar importar o módulo gerado e registrar sua classe `Agent` se existir
@@ -483,7 +483,7 @@ def ws(ws):
         # Monitor visual simplificado
         monitor_htmls = [
             f"<div><strong>Status NexoGenesis:</strong> {nexo.get_status()['nexo_genesis'] if nexo else 'indisponivel'}</div>",
-            f"<div><strong>EcoFinance:</strong> Receita R$ 1000, Despesa R$ 400</div>",
+            "<div><strong>EcoFinance:</strong> Receita R$ 1000, Despesa R$ 400</div>",
             f"<div><strong>APIcreditOptimizer:</strong> Requests: {api_opt.monitor_api_usage('dummy').get('requests', 0) if api_opt else 0}</div>",
         ]
         ws.send(json.dumps({"type": "monitor", "content": monitor_htmls}))
@@ -517,7 +517,7 @@ def ws(ws):
         ]
         ws.send(json.dumps({"type": "agentes_status", "agentes": agentes_cards}))
 
-        financeiro_html = f"<div><strong>Receita:</strong> R$ 1000<br><strong>Despesa:</strong> R$ 400<br><strong>ROI:</strong> 150%</div>"
+        financeiro_html = "<div><strong>Receita:</strong> R$ 1000<br><strong>Despesa:</strong> R$ 400<br><strong>ROI:</strong> 150%</div>"
         ws.send(json.dumps({"type": "financeiro", "graficos": financeiro_html}))
 
         # Histórico de falhas
