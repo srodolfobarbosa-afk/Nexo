@@ -9,7 +9,44 @@ description = "Nexo - agente de integração e orquestração"
 authors = [
   { name = "Nexo Maintainers" }
 ]
-dependencies = []
+dependencies = [
+  "flask>=2.2",
+  "flask-sock>=0.5",
+  "flask-cors>=3.0",
+  "gunicorn>=20.1",
+  "uvicorn>=0.23",
+  "websockets>=11.0",
+  "psutil>=5.9",
+  "requests>=2.28",
+  "python-dotenv>=1.0",
+  "supabase>=2.0",
+  "psycopg2-binary>=2.9",
+  "sqlalchemy>=1.4,<2.1",
+  "google-generativeai>=0.8",
+  "openai>=0.27",
+  "groq>=0.1",
+  "ollama>=0.1",
+  "langchain>=0.2",
+  "chromadb>=0.3",
+  "sentence-transformers>=2.2",
+  "faiss-cpu>=1.7",
+  "transformers>=4.36",
+  "numpy>=1.26",
+  "pandas>=2.2",
+  "scikit-learn>=1.3",
+  "xgboost>=2.1",
+  "lightgbm>=4.4",
+  "beautifulsoup4>=4.12",
+  "vaderSentiment>=3.3",
+  "playwright>=1.36",
+  "pyTelegramBotAPI>=4.10",
+  "python-jose>=3.3",
+  "cryptography>=41.0",
+  "pyjwt>=2.8",
+  "docker>=6.1",
+  "flask-sqlalchemy>=3.1",
+  "python-decouple>=3.8"
+]
 
 [tool.ruff]
 line-length = 88
@@ -20,3 +57,17 @@ line-length = 88
 
 [tool.isort]
 profile = "black"
+
+
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "fastapi==0.95.2",
+  "uvicorn[standard]==0.22.0",
+  "requests==2.31.0",
+  "PyGithub>=1.59.1,<2"
+]
+test = [
+  "pytest>=8.0"
+]
