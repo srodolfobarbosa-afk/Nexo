@@ -6,22 +6,22 @@ import importlib
 
 def run():
     try:
-        mod = importlib.import_module('src.ws_server')
-        app = getattr(mod, 'app', None)
+        mod = importlib.import_module("src.ws_server")
+        app = getattr(mod, "app", None)
         if app is None:
-            raise ImportError('src.ws_server.app não encontrado')
-        print('Iniciando src.ws_server.app em modo debug na porta 8000')
-        app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8000)), debug=True)
+            raise ImportError("src.ws_server.app não encontrado")
+        print("Iniciando src.ws_server.app em modo debug na porta 8000")
+        app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8000)), debug=True)
     except Exception as e:
-        print('Falha ao importar src.ws_server, iniciando fallback Flask simples:', e)
+        print("Falha ao importar src.ws_server, iniciando fallback Flask simples:", e)
         from flask import Flask
-        fapp = Flask('nexo_fallback')
+        fapp = Flask("nexo_fallback")
 
-        @fapp.route('/')
+        @fapp.route("/")
         def index():
-            return {'status': 'fallback', 'message': 'Nexo fallback running'}
+            return {"status": "fallback", "message": "Nexo fallback running"}
 
-        fapp.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8000)), debug=True)
+        fapp.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8000)), debug=True)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()

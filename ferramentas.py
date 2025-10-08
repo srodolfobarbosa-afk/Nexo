@@ -4,7 +4,7 @@ import subprocess
 import google.generativeai as genai
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
-from supabase import Client, create_client
+from supabase import create_client
 
 # Força a leitura do .env a partir do diretório do script, garantindo que ele sempre seja encontrado.
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))

@@ -8,7 +8,7 @@ rodolfo = round(amount * 0.30, 2)
 reinvest = round(amount * 0.70, 2)
 
 out_csv = os.path.abspath("apostila_ex4_eco.csv")
-with open(out_csv, "w", newline='', encoding='utf-8') as f:
+with open(out_csv, "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["descricao", "valor", "destino"])
     writer.writerow(["receita_simulada", amount, "entrada"])

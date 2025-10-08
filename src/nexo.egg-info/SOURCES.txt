@@ -10,5 +10,6 @@ src/nexo.egg-info/top_level.txt
 tests/test_agents.py
 tests/test_agents_pipeline.py
 tests/test_core.py
+tests/test_ecometrics.py
 tests/test_nexo.py
 tests/test_nl_and_vector.py

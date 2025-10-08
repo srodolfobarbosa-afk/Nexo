@@ -1,0 +1,12 @@
+{
+  "memories": [
+    {
+      "topic": "sales",
+      "payload": {
+        "q": "Q3",
+        "rev": 1000
+      }
+    }
+  ],
+  "docs": {}
+}

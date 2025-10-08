@@ -29,7 +29,6 @@ def test_vector_memory_import_error(monkeypatch):
     vm = importlib.import_module("core.vector_memory")
     # Se LangChain/FAISS estiverem instalados no ambiente de teste, pule este teste
     try:
-        import langchain  # type: ignore
 
         pytest.skip(
             "LangChain detectado no ambiente: pulando teste que espera ausência de LangChain"

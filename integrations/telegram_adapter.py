@@ -15,6 +15,6 @@ def send_alert(chat_id: str, message: str) -> bool:
         bot = telebot.TeleBot(token)
         bot.send_message(chat_id, message)
         return True
-    except Exception as e:
+    except Exception:
         logger.exception("Failed to send telegram alert")
         return False

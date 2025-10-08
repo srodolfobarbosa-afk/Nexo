@@ -1,7 +1,5 @@
 import logging
-import os
 import subprocess
-import tempfile
 from datetime import datetime
 
 logger = logging.getLogger("auto_builder")

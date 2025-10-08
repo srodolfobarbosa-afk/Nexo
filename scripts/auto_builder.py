@@ -27,7 +27,6 @@ def main():
         import os
 
         from core.auto_construction import AutoConstructionModule
-        from core.github_integration import GitHubIntegration
         from core.llm_caller import LLMCaller
 
         # Default lightweight check: build a meta-prompt
@@ -104,7 +103,7 @@ def main():
             print(str(result))
 
         return 0
-    except Exception as exc:  # pragma: no cover - runner/debug only
+    except Exception:  # pragma: no cover - runner/debug only
         print(
             "[auto_builder] WARNING: problem while running lightweight auto-builder check",
             file=sys.stderr,

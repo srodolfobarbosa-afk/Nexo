@@ -2,13 +2,12 @@ import io
 import os
 import sys
 import time
-import requests
 import json
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory
 
 # Cria a sua aplicação Flask
 app = Flask(__name__)

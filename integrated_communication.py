@@ -4,11 +4,10 @@ Sistema de Comunicação Integrada - Manus + Nexo + Usuário
 Permite comunicação tripartite através do Telegram
 """
 
-import json
 import logging
 import os
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import requests
 import telebot

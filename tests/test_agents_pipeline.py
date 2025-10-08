@@ -1,4 +1,3 @@
-import pytest
 
 from agentes.coder import CoderAI
 from agentes.reviewer import Reviewer

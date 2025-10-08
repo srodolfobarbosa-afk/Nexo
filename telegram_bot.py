@@ -4,7 +4,6 @@ Bot do Telegram para o Nexo - Sistema de Comunicação Independente
 Permite acesso direto ao Nexo através do Telegram, otimizando o uso de créditos
 """
 
-import json
 import logging
 import os
 from datetime import datetime
@@ -12,7 +11,6 @@ from datetime import datetime
 import requests
 import telebot
 from dotenv import load_dotenv
-from telebot import types
 
 # Carregar variáveis de ambiente
 load_dotenv()

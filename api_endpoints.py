@@ -2,9 +2,7 @@
 Endpoints de API para o Nexo - Comunicação com Bot do Telegram
 """
 
-import json
 import logging
-import os
 from datetime import datetime
 
 import ollama

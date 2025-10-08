@@ -18,7 +18,6 @@ def test_supabase_integration():
 
     O teste será automaticamente pulado em ambientes sem as variáveis de ambiente.
     """
-    from postgrest.exceptions import APIError
     from supabase import create_client
 
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
