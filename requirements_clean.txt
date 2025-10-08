@@ -63,8 +63,8 @@ wheel
 
 
 # Additional requested explicit pins
-fastapi==0.95.2
-uvicorn[standard]>=0.23,<1
+fastapi
+uvicorn[standard]
 requests==2.31.0
 PyGithub>=1.59.1,<2
 
