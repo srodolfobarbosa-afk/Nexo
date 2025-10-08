@@ -8,8 +8,6 @@ instanciá-las e registra via `core.agent_registry.register_agent_instance`.
 import importlib
 import inspect
 import pkgutil
-import sys
-from typing import List
 
 from core.agent_base import AgentBase
 from core.agent_registry import register_agent, register_agent_instance

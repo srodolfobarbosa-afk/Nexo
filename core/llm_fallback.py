@@ -6,7 +6,7 @@ Também expõe call_with_fallback(prompt, **kwargs) que tenta provedores na orde
 
 import logging
 import os
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from .supabase_client import save_log
 
@@ -59,7 +59,6 @@ def call_with_fallback(
     **kwargs,
 ) -> Dict[str, Any]:
     """Tenta chamar provedores em ordem, retornando o primeiro sucesso. Registra eventos de fallback no Supabase quando possível."""
-    import time
 
     providers = available_providers()
     if preferred and preferred in providers:

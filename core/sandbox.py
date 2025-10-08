@@ -7,7 +7,6 @@ Nota: isto NÃO substitui uma sandbox kernel-level (container/seccomp). Para
 proteção completa, execute o import dentro de um container isolado.
 """
 import json
-import shlex
 import subprocess
 import sys
 import os

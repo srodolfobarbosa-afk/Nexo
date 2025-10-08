@@ -7,7 +7,7 @@ import logging
 import threading
 import time
 from datetime import datetime
-from random import choice, random
+from random import random
 
 from . import sqlite_client
 from .supabase_client import save_log, save_task

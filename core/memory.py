@@ -31,7 +31,7 @@ class EcoMemory:
                 # (nem sempre disponível, mas evita crashes posteriores)
                 try:
                     # list tables minimalmente (pode falhar se não houver permissão)
-                    _ = self.sb.table('memory')
+                    _ = self.sb.table("memory")
                     self.use_supabase = True
                 except Exception:
                     logging.warning("Supabase client inicializado, mas validação falhou; usando SQLite fallback")

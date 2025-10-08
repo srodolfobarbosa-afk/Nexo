@@ -14,7 +14,7 @@ def insert(table: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     try:
         res = supabase.table(table).insert(data).execute()
         return res.data if hasattr(res, "data") else None
-    except Exception as e:
+    except Exception:
         logger.exception("Supabase insert failed")
         return None
 
@@ -31,6 +31,6 @@ def select(table: str, query: Dict[str, Any]) -> Optional[Any]:
             q = q.eq(k, v)
         res = q.select("*").execute()
         return res.data if hasattr(res, "data") else None
-    except Exception as e:
+    except Exception:
         logger.exception("Supabase select failed")
         return None

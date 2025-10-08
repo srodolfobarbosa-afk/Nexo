@@ -1,5 +1,4 @@
 import base64
-import json
 import os
 from datetime import datetime
 
@@ -149,7 +148,7 @@ class GitHubIntegration:
             )
 
             if tree_response.status_code != 201:
-                print(f"❌ Erro ao criar tree")
+                print("❌ Erro ao criar tree")
                 return False
 
             tree_sha = tree_response.json()["sha"]
@@ -164,7 +163,7 @@ class GitHubIntegration:
             )
 
             if commit_response.status_code != 201:
-                print(f"❌ Erro ao criar commit")
+                print("❌ Erro ao criar commit")
                 return False
 
             commit_sha = commit_response.json()["sha"]
@@ -182,7 +181,7 @@ class GitHubIntegration:
                 print(f"🔗 Commit SHA: {commit_sha}")
                 return True
             else:
-                print(f"❌ Erro ao atualizar branch")
+                print("❌ Erro ao atualizar branch")
                 return False
 
         except Exception as e:
@@ -283,7 +282,7 @@ class GitHubIntegration:
             message = f"🚀 Auto-construção: {feature_name}\n\n"
             message += f"Arquivos criados/modificados: {len(files_to_commit)}\n"
             message += f"Timestamp: {construction_result.get('timestamp', 'N/A')}\n"
-            message += f"Gerado por: Nexo Gênesis Auto-Construction"
+            message += "Gerado por: Nexo Gênesis Auto-Construction"
 
             # Fazer commit múltiplo
             success = self.commit_multiple_files(files_to_commit, message)

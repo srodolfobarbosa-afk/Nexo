@@ -23,7 +23,7 @@ def check_supabase_connection():
 
         # Tentativa de fazer uma query simples na tabela usada pelo EcoMemory: 'memory'
         try:
-            response = supabase.table('memory').select("id").limit(1).execute()
+            response = supabase.table("memory").select("id").limit(1).execute()
             print("✅ Conexão com o Supabase bem-sucedida!")
             print("🔍 Resposta da query de teste:", response.data)
         except Exception as e:
@@ -31,9 +31,9 @@ def check_supabase_connection():
             msg = str(e)
             print(f"❌ Erro ao consultar a tabela 'memory': {msg}")
             print("Dica: crie a tabela 'memory' no schema public. Exemplo SQL:")
-            print("\n-- Habilitar extensão para gen_random_uuid (se desejar)\nCREATE EXTENSION IF NOT EXISTS \"pgcrypto\";\n\n-- Criação mínima da tabela memory\nCREATE TABLE public.memory (\n  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),\n  topic text NOT NULL,\n  payload jsonb NOT NULL,\n  tags jsonb,\n  sentiment text,\n  created_at timestamptz DEFAULT now()\n);\n")
+            print('\n-- Habilitar extensão para gen_random_uuid (se desejar)\nCREATE EXTENSION IF NOT EXISTS "pgcrypto";\n\n-- Criação mínima da tabela memory\nCREATE TABLE public.memory (\n  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),\n  topic text NOT NULL,\n  payload jsonb NOT NULL,\n  tags jsonb,\n  sentiment text,\n  created_at timestamptz DEFAULT now()\n);\n')
             return
-        
+
     except Exception as e:
         print(f"❌ Falha ao conectar ou fazer query no Supabase: {e}")
 

@@ -60,7 +60,6 @@ from core.json_utils import (
     MISSION_INTERPRETATION_SCHEMA,
     REVIEW_SCHEMA,
     create_json_prompt,
-    extract_json,
     safe_json_response,
 )
 
