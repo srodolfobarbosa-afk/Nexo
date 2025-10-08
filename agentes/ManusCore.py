@@ -171,8 +171,8 @@ class ManusCore:
                 # continuar importando outros registros mesmo se um falhar
                 continue
 
-        # criar um módulo residente simples (scaffold) para virar o agente local
-        agents_dir = os.path.join(os.path.dirname(__file__))
+    # criar um módulo residente simples (scaffold) para virar o agente local
+    agents_dir = os.path.join(os.path.dirname(__file__))
         os.makedirs(agents_dir, exist_ok=True)
         resident_path = os.path.join(agents_dir, "ManusResident.py")
         manifest = bundle.get("docs", {}).get("manifesto.md") or bundle.get("manifesto")
@@ -184,6 +184,18 @@ class ManusCore:
                 f.write(module_src)
         except Exception as e:
             raise IOError(f"Falha ao criar módulo residente: {e}")
+
+        # validar o módulo gerado em sandbox antes de confirmar
+        try:
+            from core.sandbox import sandbox_import_module
+
+            res = sandbox_import_module(resident_path, symbol="Agent", timeout=3)
+            if not res.get("ok"):
+                # registro de alerta na memória, mas não falha a importação
+                self.memory.add_record(topic="manus_import_alert", payload={"issue": res.get("error")})
+        except Exception as e:
+            # se a sandbox não estiver disponível, gravar aviso e continuar
+            self.memory.add_record(topic="manus_import_alert", payload={"issue": str(e)})
 
         # registrar manifesto simples na memória
         self.memory.add_record(topic="manus_import_summary", payload={"imported": imported, "module": resident_path})
