@@ -8,6 +8,7 @@ try:
     SUPABASE_AVAILABLE = True
 except Exception:
     SUPABASE_AVAILABLE = False
+import logging
 
 
 class EcoMemory:
@@ -20,10 +21,25 @@ class EcoMemory:
     def __init__(self, db_path: str = "data/eco_memory.db"):
         self.supabase_url = os.environ.get("SUPABASE_URL")
         self.supabase_key = os.environ.get("SUPABASE_KEY")
-        self.use_supabase = bool(self.supabase_url and self.supabase_key and SUPABASE_AVAILABLE)
-        if self.use_supabase:
-            self.sb = create_client(self.supabase_url, self.supabase_key)
-        else:
+        # prefer supabase se disponível e configurado, mas faça fallback seguro para sqlite
+        self.use_supabase = False
+        self.sb = None
+        if self.supabase_url and self.supabase_key and SUPABASE_AVAILABLE:
+            try:
+                self.sb = create_client(self.supabase_url, self.supabase_key)
+                # faça uma chamada simples para validar cliente
+                # (nem sempre disponível, mas evita crashes posteriores)
+                try:
+                    # list tables minimalmente (pode falhar se não houver permissão)
+                    _ = self.sb.table('memory')
+                    self.use_supabase = True
+                except Exception:
+                    logging.warning("Supabase client inicializado, mas validação falhou; usando SQLite fallback")
+                    self.use_supabase = False
+            except Exception as e:
+                logging.warning(f"Falha ao inicializar Supabase client: {e}; usando SQLite fallback")
+
+        if not self.use_supabase:
             os.makedirs(os.path.dirname(db_path), exist_ok=True)
             self.conn = sqlite3.connect(db_path, check_same_thread=False)
             self._ensure_table()
