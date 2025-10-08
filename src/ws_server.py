@@ -34,6 +34,8 @@ from core.agent_registry import get_agents, register_agent
 from core.database import get_supabase_client
 from core.jwt_auth import create_token, require_jwt, verify_token
 from core.mission_runner import start_background
+from agentes.EcoMetrics import EcoMetrics
+from agentes.ManusCore import ManusCore
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -43,6 +45,24 @@ logger = logging.getLogger("ws_server")
 app = Flask(__name__, static_folder="../app/static", static_url_path="/static")
 CORS(app)
 sock = Sock(app)
+
+# Instanciar agente EcoMetrics globalmente (usa EcoMemory interna - Supabase ou SQLite fallback)
+metrics_agent = EcoMetrics()
+
+# Instanciar ManusCore e registrar
+try:
+    manus_core = ManusCore()
+    try:
+        from core.agent_registry import register_agent_instance
+
+        register_agent_instance(manus_core, {"status": "idle"})
+    except Exception:
+        from core.agent_registry import register_agent
+
+        register_agent("ManusCore", {"status": "idle"})
+except Exception as e:
+    logger.error(f"Falha ao instanciar ManusCore: {e}")
+    manus_core = None
 
 # Segurança em runtime: evitar uso de JWT_SECRET padrão quando Supabase Auth estiver ativado
 if os.environ.get("USE_SUPABASE_AUTH", "0") in ("1", "true", "True"):
@@ -259,6 +279,133 @@ def api_missions_stop():
         return jsonify({"user": payload.get("sub"), "status": "stopped"})
     except Exception as e:
         logger.error(f"Erro ao parar mission runner via API: {e}")
+        return make_response(jsonify({"error": "internal_error"}), 500)
+
+
+@app.route("/api/metrics", methods=["POST"])
+def api_metrics_post():
+    """Ingesta simples de métricas via JSON: {name, value, meta} - público por enquanto."""
+    try:
+        data = request.get_json(silent=True) or {}
+        name = data.get("name")
+        value = data.get("value")
+        meta = data.get("meta")
+        if not name:
+            return make_response(jsonify({"error": "name_required"}), 400)
+        metrics_agent.collect_metric(name, value, meta)
+        return jsonify({"status": "ok", "name": name}), 201
+    except Exception as e:
+        logger.error(f"Erro ao receber métrica: {e}")
+        return make_response(jsonify({"error": "internal_error"}), 500)
+
+
+@app.route("/api/metrics", methods=["GET"])
+def api_metrics_get():
+    """Retorna métricas recentes (público). query param: limit"""
+    try:
+        limit = int(request.args.get("limit", "100"))
+        metrics = metrics_agent.get_recent_metrics(limit=limit)
+        return jsonify({"count": len(metrics), "metrics": metrics})
+    except Exception as e:
+        logger.error(f"Erro ao buscar métricas: {e}")
+        return make_response(jsonify({"error": "internal_error"}), 500)
+
+
+@app.route("/api/manus/export", methods=["POST"])
+@require_jwt
+def api_manus_export():
+    from flask import g
+
+    payload = g.jwt_payload
+    if not manus_core:
+        return make_response(jsonify({"error": "manus_unavailable"}), 503)
+    try:
+        path = manus_core.export_knowledge()
+        return jsonify({"status": "ok", "path": path})
+    except Exception as e:
+        logger.error(f"Erro no export ManusCore: {e}")
+        return make_response(jsonify({"error": "internal_error"}), 500)
+
+
+@app.route("/api/manus/plan", methods=["POST"])
+@require_jwt
+def api_manus_plan():
+    from flask import g
+
+    payload = g.jwt_payload
+    if not manus_core:
+        return make_response(jsonify({"error": "manus_unavailable"}), 503)
+    try:
+        desc = request.json.get("description") if request.json else None
+        plan = manus_core.plan_migration(description_override=desc)
+        return jsonify({"status": "ok", "plan": plan})
+    except Exception as e:
+        logger.error(f"Erro no plan ManusCore: {e}")
+        return make_response(jsonify({"error": "internal_error"}), 500)
+
+
+@app.route("/api/manus/run_daily", methods=["POST"])
+@require_jwt
+def api_manus_run_daily():
+    from flask import g
+
+    payload = g.jwt_payload
+    if not manus_core:
+        return make_response(jsonify({"error": "manus_unavailable"}), 503)
+    try:
+        res = manus_core.run_daily_cycle()
+        return jsonify({"status": "ok", "result": res})
+    except Exception as e:
+        logger.error(f"Erro no run_daily ManusCore: {e}")
+        return make_response(jsonify({"error": "internal_error"}), 500)
+
+
+@app.route("/api/manus/import", methods=["POST"]) 
+@require_jwt
+def api_manus_import():
+    """Importa um bundle de conhecimento para Manus residente.
+
+    Aceita JSON body com {"path": "/tmp/bundle.json"} ou um objeto bundle direto.
+    Retorna o caminho do módulo residente criado.
+    """
+    from flask import g
+
+    payload = g.jwt_payload
+    if not manus_core:
+        return make_response(jsonify({"error": "manus_unavailable"}), 503)
+    try:
+        data = request.get_json(silent=True)
+        if not data:
+            return make_response(jsonify({"error": "invalid_payload"}), 400)
+
+        # se veio um path, passe o caminho; se veio um bundle dict, passe diretamente
+        if isinstance(data, dict) and "path" in data:
+            path = data.get("path")
+            module_path = manus_core.import_knowledge(path)
+        else:
+            module_path = manus_core.import_knowledge(data)
+
+        # tentar registrar automaticamente o módulo residente no registry
+        try:
+            from core.agent_registry import register_agent_instance, import_and_register_module
+
+            try:
+                # tentar importar o módulo gerado e registrar sua classe `Agent` se existir
+                imported = import_and_register_module(module_path, instance_name="ManusResident")
+                logger.info(f"ManusResident importado e registrado: {imported}")
+            except Exception:
+                # fallback: apenas registrar pelo nome
+                register_agent("ManusResident", {"status": "imported"})
+        except Exception:
+            # se não houver registry disponível, ignore
+            pass
+
+        return jsonify({"status": "ok", "module": module_path})
+    except ValueError as e:
+        logger.error(f"Erro de validação import ManusCore: {e}")
+        return make_response(jsonify({"error": "validation_error", "msg": str(e)}), 400)
+    except Exception as e:
+        logger.error(f"Erro no import ManusCore: {e}")
         return make_response(jsonify({"error": "internal_error"}), 500)
 
 
