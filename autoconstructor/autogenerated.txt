@@ -1,0 +1,1 @@
+[LLM Unavailable] No OPENAI_API_KEY and no local transformers pipeline available. Please configure one to use LLM features.
