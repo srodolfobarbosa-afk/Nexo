@@ -1,0 +1,1 @@
+[LLM Unavailable] No OPENAI_API_KEY, no Ollama available, and no working transformers pipeline. Please configure one to use LLM features.
