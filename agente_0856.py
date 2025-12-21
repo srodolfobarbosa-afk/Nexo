@@ -1,38 +1,35 @@
 ﻿import requests
-import google.generativeai as genai
+import time
 import os
 
-# USANDO A CHAVE QUE FUNCIONOU NO SCAN
-GEMINI_KEY = "AIzaSyDrbRaS9jRRczo5gs6tMwfeR88LofOLHqE"
+# Dados essenciais
 SUPABASE_URL = "https://jyfurrvkqrdkwtvtfzbw.supabase.co/rest/v1/nexo_memoria"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5ZnVycnZrcXJka3d0dnRmemJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MTYzMjAsImV4cCI6MjA3MzQ5MjMyMH0.zuTYPgiy4PbsGdkG_rDX-YREhWcy225U2732Lq__Pno"
 
-def agente_analista():
-    print("🧠 AGENTE 0856: Iniciando Análise de Dados...")
-    headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": "application/json"}
-
-    try:
-        response = requests.get(f"{SUPABASE_URL}?select=*&order=id.desc&limit=1", headers=headers)
-        dados = response.json()
-
-        if dados:
-            contexto_bruto = dados[0].get('contexto', 'Sem dados')
-            print(f"📊 Analisando: {contexto_bruto}")
-
-            genai.configure(api_key=GEMINI_KEY)
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            prompt = f"Resuma este log do NexoGenesis e defina a próxima prioridade: {contexto_bruto}"
-            analise = model.generate_content(prompt)
-
-            print(f"💡 INSIGHT: {analise.text}")
+def bater_coracao():
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json"
+    }
+    while True:
+        try:
+            print("💓 NEXO: Estou vivo. Enviando sinal...")
+            payload = {"contexto": "Sinal de Vida", "codigo_gerado": "ESTADO: ONLINE"}
+            r = requests.post(SUPABASE_URL, headers=headers, json=payload, timeout=10)
             
-            payload = {"contexto": "Relatório de Inteligência 0856", "codigo_gerado": f"SUCESSO: {analise.text[:150]}"}
-            requests.post(SUPABASE_URL, headers=headers, json=payload)
-            print("✅ Inteligência guardada no Supabase.")
-        else:
-            print("💤 Sem dados novos.")
-    except Exception as e:
-        print(f"❌ Erro real na análise: {e}")
+            if r.status_code == 201:
+                print("✅ Sinal recebido pelo Supabase.")
+            else:
+                print(f"⚠️ Supabase respondeu com erro: {r.status_code}")
+                
+            time.sleep(60) # Espera 1 minuto para a próxima batida
+            
+        except Exception as e:
+            print(f"🚑 ERRO DETECTADO: {e}. Reiniciando sistema em 10s...")
+            time.sleep(10)
+            # O sistema tenta se relançar sozinho
+            os.system("python agente_0856.py")
 
 if __name__ == "__main__":
-    agente_analista()
+    bater_coracao()
