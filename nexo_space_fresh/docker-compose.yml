@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  nexo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nexo-v2026
+    platform: linux/amd64
+    ports:
+      - "7860:7860"
+    environment:
+      # --- IA E PROCESSAMENTO ---
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      HF_TOKEN: ${HF_TOKEN}
+      
+      # --- MEMÓRIA VETORIAL (PINECONE) ---
+      PINECONE_API_KEY: ${PINECONE_API_KEY}
+      PINECONE_INDEX_NAME: ${PINECONE_INDEX_NAME:-nexo-soberano}
+      PINECONE_ENV: ${PINECONE_ENV:-us-east-1}
+      
+      # --- BANCO DE DADOS (SUPABASE) ---
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_KEY: ${SUPABASE_KEY}
+      
+      # --- RODÍZIO DE CHAVES (RESILIÊNCIA) ---
+      GROQ_KEY_1: ${GROQ_KEY_1}
+      GROQ_KEY_2: ${GROQ_KEY_2}
+      GROQ_KEY_3: ${GROQ_KEY_3}
+      GROQ_KEY_4: ${GROQ_KEY_4}
+      GROQ_KEY_5: ${GROQ_KEY_5}
+      
+      # --- OPERAÇÕES FINANCEIRAS ---
+      MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN}
+      BINANCE_API_KEY: ${BINANCE_API_KEY}
+      BINANCE_SECRET_KEY: ${BINANCE_SECRET_KEY}
+      
+      # --- INTEGRAÇÕES ---
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY}
+      ADMIN_GH_TOKEN: ${ADMIN_GH_TOKEN}
+      N8N_URL: ${N8N_URL:-http://localhost:5678}
+      
+      # --- CONFIGURAÇÕES ---
+      DEBUG: ${DEBUG:-True}
+      PORT: 7860
+      
+    volumes:
+      - ./data:/app/data
+      - ./:/app
+      
+    restart: unless-stopped
+    
+    networks:
+      - nexo-network
+
+  # Opcional: Supabase (se usar localmente)
+  supabase:
+    image: supabase/postgres:15-alpine
+    container_name: nexo-db
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexo2026}
+    volumes:
+      - supabase_data:/var/lib/postgresql/data
+    networks:
+      - nexo-network
+    profiles:
+      - optional
+
+volumes:
+  supabase_data:
+
+networks:
+  nexo-network:
+    driver: bridge

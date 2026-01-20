@@ -29,7 +29,7 @@ RUN mkdir -p /app/data /app/logs
 
 # Instalar dependências do Python PRIMEIRO
 COPY requirements.txt .
-RUN pip install --no-cache-dir --no-deps -r requirements.txt || pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar código da aplicação
 COPY . .
@@ -45,3 +45,9 @@ EXPOSE 7860
 
 # CMD que executa auto-migração + validação + aplicação
 CMD ["sh", "-c", "python /app/nexo_migration.py && python /app/auto_validator.py && streamlit run app.py --server.port 7860"]
+
+# Copiar o projeto
+COPY . .
+
+# Iniciar o sistema
+CMD ["python", "app.py"]
