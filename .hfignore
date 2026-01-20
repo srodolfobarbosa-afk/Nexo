@@ -1,0 +1,5 @@
+# Ignore old stuff
+nexo_space/
+*.pyc
+__pycache__
+.git
