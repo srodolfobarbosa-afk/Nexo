@@ -1,23 +1,16 @@
 FROM python:3.12-slim
 
-# NEXO v2026 - Production-Ready
+# NEXO v2026 - Production-Ready FIX
 LABEL maintainer="NEXO-MAESTRO"
-LABEL description="NEXO v2026 - Build Otimizado"
+LABEL description="NEXO v2026 - Build SEM langchain"
 
-# Instalar dependências do sistema
-RUN apt-get update && apt-get install -y \
-    git wget curl gnupg unzip ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y git wget curl gnupg unzip ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-# Criar diretórios
 RUN mkdir -p /app/data /app/logs
 
-# Copiar requirements
 COPY requirements.txt .
 
-# Instalar com cache limpo - SEM langchain conflitante
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir \
     fastapi==0.104.1 \
@@ -30,12 +23,10 @@ RUN pip install --upgrade pip && \
     beautifulsoup4==4.12.2 \
     streamlit==1.28.1
 
-# Copiar código
 COPY . .
 
-# Ignorar erros
-RUN python /app/nexo_migration.py || echo "Migration skipped"
-RUN python /app/auto_validator.py || echo "Validation skipped"
+RUN python /app/nexo_migration.py || echo "skip"
+RUN python /app/auto_validator.py || echo "skip"
 
 ENV PORT=7860
 EXPOSE 7860
