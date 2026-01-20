@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  nexo:
+    image: registry.hf.space/nexo-maestro-srodolfobarbosa:latest
+    platform: linux/amd64
+    container_name: nexo-maestro
+    ports:
+      - "7860:7860"
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - nexo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  nexo-network:
+    driver: bridge
