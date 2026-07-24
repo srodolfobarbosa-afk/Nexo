@@ -1,16 +1,13 @@
 name: Nexo Motor 24h - Cerebro Digital
-
 on:
   schedule:
-    - cron: '0 */1 * * *'
+      - cron: '0 */1 * * *'
   workflow_dispatch:
   push:
     paths:
       - 'nexo_comunicacao/meta_para_braco.md'
-
 permissions:
   contents: write
-
 jobs:
   cerebro:
     runs-on: ubuntu-latest
