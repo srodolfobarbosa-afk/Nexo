@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  nexo-cerebro-vivo:
+    build: .
+    container_name: nexo_cerebro_vivo_final
+    volumes:
+      - ./nexo_space:/app/nexo_space
+      - ./entregas:/app/entregas
+    env_file:
+      - .env
+    restart: unless-stopped
+    # Seu fix langchain-core dependency conflict mantido
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ANCORAGEM_PRIMOS=2*3*5*7
