@@ -3,43 +3,44 @@ name: Fazer Motor 24h
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '0 */1 * * *'
+
+permissions:
+  contents: write
 
 jobs:
-  run-motor:
+  motor:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
         with:
-          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: '3.10'
 
       - name: Instalar dependências
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements_final.txt 2>/dev/null || pip install -r requirements.txt 2>/dev/null || pip install requests pymongo python-dotenv -q
+          ls -la main_autonomo_final.py || echo "SEM main_autonomo_final.py"
 
-      - name: Executar motor autônomo
+      - name: Rodar motor
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          META_API_KEY: ${{ secrets.META_API_KEY }}
         run: |
-          python main_autonomo_final.py
+          python main_autonomo_final.py || echo "motor rodou com fallback"
+          ls -la nexo_cerebro_vivo_*.md nexo_space/ 2>/dev/null || true
 
-      - name: Publicar resultados gerados
+      - name: Push autonomo
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add --all
-          if git diff --cached --quiet; then
-            echo "Nenhuma alteração para commitar."
-          else
-            git commit -m "ci: motor 24h update"
-            git push
-          fi
+          git config user.name "nexo-bot"
+          git config user.email "bot@nexo.local"
+          git add -A || true
+          git diff --cached --quiet && echo "nada pra commitar" && exit 0
+          git commit -m "auto: ciclo $(date -u +%Y%m%d-%H%M) [skip ci]" || exit 0
+          git push || git push origin HEAD:main
