@@ -1,5 +1,5 @@
 # COLUNA DIA 7 - @COLUNADOCR
-Prob venda real Bayes: 1.1929%
+Prob venda real Bayes: 2.2962%
 Godel ancora: 210
 Schelling: Ubuntu 26.04 Resolute Raccoon 23-04-2026
 NexaLang: 
