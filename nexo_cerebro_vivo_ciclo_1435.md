@@ -1,5 +1,5 @@
-# CICLO 2026-08-24 14:35:24.018619 - hash d2dc6e1d
-Bayes: 0.026852844309807798
+# CICLO 2026-11-27 14:35:57.880673 - hash d2dc6e1d
+Bayes: 0.010815648465538452
 Compress: {'bits': 10, 'estados': 1024, 'tarefas_comprimidas': 1000}
 NexaLang executada
 Evolucao: cerebro reescreveu entregas 7 arquivos
